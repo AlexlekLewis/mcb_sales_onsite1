@@ -11,6 +11,7 @@ export function useQuoteBuilder() {
     const [priceGroups, setPriceGroups] = useState<PriceGroup[]>([]);
     const [fabrics, setFabrics] = useState<Fabric[]>([]);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
 
     // --- Quote State ---
     const [customerName, setCustomerName] = useState('');
@@ -35,19 +36,31 @@ export function useQuoteBuilder() {
     useEffect(() => {
         async function fetchData() {
             setLoading(true);
-            const [productsRes, extrasRes, groupsRes, fabricsRes] = await Promise.all([
-                supabase.from('products').select('*').order('supplier'),
-                supabase.from('product_extras').select('*').order('product_category, name'),
-                supabase.from('price_groups').select('*').order('supplier, group_code'),
-                supabase.from('fabrics').select('*').order('brand, name')
-            ]);
+            setError(null);
+            try {
+                const [productsRes, extrasRes, groupsRes, fabricsRes] = await Promise.all([
+                    supabase.from('products').select('*').order('supplier'),
+                    supabase.from('product_extras').select('*').order('product_category, name'),
+                    supabase.from('price_groups').select('*').order('supplier, group_code'),
+                    supabase.from('fabrics').select('*').order('brand, name')
+                ]);
 
-            if (productsRes.data) setProducts(productsRes.data.filter(p => p.is_active !== false));
-            // Ensure price is treated as number
-            if (extrasRes.data) setExtras(extrasRes.data.filter(e => e.is_active !== false).map(e => ({ ...e, price: typeof e.price === 'string' ? parseFloat(e.price) : e.price })));
-            if (groupsRes.data) setPriceGroups(groupsRes.data.filter(g => g.is_active !== false));
-            if (fabricsRes.data) setFabrics(fabricsRes.data.filter(f => f.is_active !== false));
-            setLoading(false);
+                if (productsRes.error) throw new Error(`Products: ${productsRes.error.message}`);
+                if (extrasRes.error) throw new Error(`Extras: ${extrasRes.error.message}`);
+                if (groupsRes.error) throw new Error(`Price Groups: ${groupsRes.error.message}`);
+                if (fabricsRes.error) throw new Error(`Fabrics: ${fabricsRes.error.message}`);
+
+                if (productsRes.data) setProducts(productsRes.data.filter(p => p.is_active !== false));
+                // Ensure price is treated as number
+                if (extrasRes.data) setExtras(extrasRes.data.filter(e => e.is_active !== false).map(e => ({ ...e, price: typeof e.price === 'string' ? parseFloat(e.price) : e.price })));
+                if (groupsRes.data) setPriceGroups(groupsRes.data.filter(g => g.is_active !== false));
+                if (fabricsRes.data) setFabrics(fabricsRes.data.filter(f => f.is_active !== false));
+            } catch (err: any) {
+                console.error("Error loading quote data:", err);
+                setError(err.message || 'Failed to load quote data');
+            } finally {
+                setLoading(false);
+            }
         }
         fetchData();
     }, []);
@@ -100,10 +113,17 @@ export function useQuoteBuilder() {
         return filtered;
     }, [activeTab, products]);
 
-    // Auto-select single product
+    // Auto-select single product OR clear if invalid for current tab
     useEffect(() => {
-        if (tabProducts.length === 1 && selectedProductId !== tabProducts[0].id) {
-            setSelectedProductId(tabProducts[0].id);
+        // If the currently selected product is NOT in the new tab's product list, clear it.
+        const isValidForTab = tabProducts.some(p => p.id === selectedProductId);
+
+        if (!isValidForTab) {
+            if (tabProducts.length === 1) {
+                setSelectedProductId(tabProducts[0].id);
+            } else {
+                setSelectedProductId('');
+            }
         }
     }, [tabProducts, selectedProductId]);
 
@@ -338,6 +358,7 @@ export function useQuoteBuilder() {
             selectedProduct,
         },
         loading,
+        error,
 
         // Quote
         quote: {

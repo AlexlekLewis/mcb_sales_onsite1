@@ -23,7 +23,8 @@ export function CreateQuoteV2() {
             fullness, setFullness
         },
         actions: { toggleExtra, addQuoteItem, removeQuoteItem, updateQuoteItem }, // removed loading unused here
-        loading
+        loading,
+        error
     } = useQuoteBuilder();
 
     const [saving, setSaving] = useState(false);
@@ -103,6 +104,23 @@ export function CreateQuoteV2() {
         return (
             <div className="flex items-center justify-center h-full">
                 <Loader2 className="animate-spin text-brand-orange" size={40} />
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className="flex items-center justify-center h-full">
+                <div className="bg-red-500/10 border border-red-500/50 rounded-lg p-6 max-w-md text-center">
+                    <h3 className="text-red-500 font-bold mb-2">Failed to Load Quote Data</h3>
+                    <p className="text-gray-300 mb-4">{error}</p>
+                    <button
+                        onClick={() => window.location.reload()}
+                        className="px-4 py-2 bg-white/10 hover:bg-white/20 rounded text-white text-sm"
+                    >
+                        Retry
+                    </button>
+                </div>
             </div>
         );
     }
