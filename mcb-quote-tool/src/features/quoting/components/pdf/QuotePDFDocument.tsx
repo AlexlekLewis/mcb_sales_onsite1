@@ -2,6 +2,7 @@ import React from 'react';
 import { Page, Text, View, Document, StyleSheet, Font, Image } from '@react-pdf/renderer';
 import { Quote, QuoteItemFull } from '../../types';
 import { formatCurrency } from '../../margin-utils';
+import logo from '../../../../assets/logo.png';
 
 // Register a standard font if we want custom fonts later. 
 // For now, Helvetica is built-in and fine.
@@ -23,9 +24,9 @@ const styles = StyleSheet.create({
         paddingBottom: 20,
     },
     logo: {
-        fontSize: 24,
-        fontWeight: 'bold',
-        color: '#1a1a2e',
+        width: 120,
+        height: 'auto',
+        marginBottom: 10,
     },
     subLabel: {
         fontSize: 10,
@@ -167,7 +168,7 @@ export const QuotePDFDocument = ({ quote, items }: QuotePDFProps) => {
                 {/* Header */}
                 <View style={styles.header}>
                     <View>
-                        <Text style={styles.logo}>Modern Curtains & Blinds</Text>
+                        <Image style={styles.logo} src={logo} />
                         <View style={styles.companyDetails}>
                             <Text>ABN: 49 674 694 832</Text>
                             <Text>Phone: (03) xxxx xxxx</Text>

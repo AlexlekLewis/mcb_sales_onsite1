@@ -14,6 +14,8 @@ import { Link, useLocation } from 'react-router-dom';
 import { cn } from '../../lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 
+import logo from '../../assets/logo.png';
+
 const SidebarItem = ({ icon: Icon, label, path, badge, onClick }: { icon: any, label: string, path: string, badge?: number, onClick?: () => void }) => {
     const location = useLocation();
     const isActive = location.pathname === path;
@@ -60,13 +62,13 @@ const SidebarItem = ({ icon: Icon, label, path, badge, onClick }: { icon: any, l
 const SidebarContent = ({ onItemClick }: { onItemClick?: () => void }) => (
     <>
         {/* Logo Area */}
-        <div className="flex items-center gap-3 px-4 py-6 mb-4">
-            <div className="w-10 h-10 bg-[linear-gradient(135deg,#D97706,#F59E0B)] rounded-xl flex items-center justify-center shadow-orange-glow border border-white/10">
-                <LayoutDashboard size={20} className="text-white" />
-            </div>
-            <div>
-                <h1 className="font-bold text-lg leading-tight tracking-tight">SwiftQuote</h1>
-                <p className="text-xs text-slate-400">mcb-sales</p>
+        <div className="flex flex-col items-center justify-center py-6 mb-4">
+            <div className="w-32 h-32 relative mb-2">
+                <img
+                    src={logo}
+                    alt="MCB Logo"
+                    className="w-full h-full object-contain drop-shadow-[0_0_15px_rgba(217,119,6,0.3)]"
+                />
             </div>
         </div>
 
