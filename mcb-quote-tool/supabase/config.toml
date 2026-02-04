@@ -1,0 +1,1 @@
+{ "functions": { "send-quote": { "verify_jwt": true } } }
