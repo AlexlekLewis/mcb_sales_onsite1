@@ -8,7 +8,8 @@ interface PricingOptions {
 
 interface PricingResult {
     price: number;
-    warning?: string;
+    warning?: string;  // Error messages (dimensions exceed max, grid not found, etc.)
+    note?: string;     // Informational messages (pricing tier used)
 }
 
 export const calculatePrice = (product: Product, w: number, d: number, options: PricingOptions): PricingResult => {
@@ -68,7 +69,7 @@ const calculateCurtainPrice = (data: GridPricingData, w: number, d: number, { pr
 
     return {
         price,
-        warning: `Priced @ ${width_steps[widthIndex]}W x ${drop_steps[dropIndex]}D`
+        note: `Priced @ ${width_steps[widthIndex]}W x ${drop_steps[dropIndex]}D`
     };
 };
 
@@ -97,7 +98,7 @@ const calculateExternalBlindPrice = (data: GridPricingData, w: number, d: number
 
     return {
         price: finalPrice,
-        warning: `Priced @ ${width_steps[widthIndex]}W x ${drop_steps[dropIndex]}D`
+        note: `Priced @ ${width_steps[widthIndex]}W x ${drop_steps[dropIndex]}D`
     };
 };
 
@@ -138,7 +139,7 @@ const calculateStandardGridPrice = (data: GridPricingData, w: number, d: number,
 
     return {
         price: finalPrice,
-        warning: `Priced @ ${width_steps[widthIndex]}W x ${drop_steps[dropIndex]}D`
+        note: `Priced @ ${width_steps[widthIndex]}W x ${drop_steps[dropIndex]}D`
     };
 };
 
@@ -148,7 +149,7 @@ const calculateSqmPrice = (data: SqmPricingData, w: number, d: number, { priceGr
     const multiplier = priceGroup?.multiplier || 1.0;
     const price = sqm * basePrice * multiplier;
 
-    return { price, warning: `Area: ${sqm.toFixed(2)} sqm` };
+    return { price, note: `Area: ${sqm.toFixed(2)} sqm` };
 };
 
 export const calculateExtraPrice = (extra: { price_type?: string; price: number }, basePrice: number, w: number, d: number): number => {

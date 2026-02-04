@@ -132,18 +132,21 @@ export function VoiceRecorder() {
     const saveNote = async () => {
         if (!transcript) return;
 
-        // In a real app, we'd save to a notes table or Supabase bucket
-        const { error } = await supabase.from('quotes').insert({
-            customer_name: 'Voice Note ' + new Date().toLocaleString(),
-            status: 'draft',
-            total_amount: 0,
-            // We'd ideally have a 'notes' column, but for now we'll just log it
-        });
+        try {
+            const { error } = await supabase.from('notes').insert({
+                type: 'voice',
+                content: transcript,
+                user_id: (await supabase.auth.getUser()).data.user?.id
+            });
 
-        if (error) {
-            console.error("Error saving placeholder quote:", error);
-        } else {
-            alert("Transcript saved (mock implementation linked to new Quote)");
+            if (error) throw error;
+
+            alert("Voice note saved successfully!");
+            setTranscript('');
+            setInterimTranscript('');
+        } catch (error: any) {
+            console.error("Error saving voice note:", error);
+            alert(`Failed to save voice note: ${error.message || 'Unknown error'}`);
         }
     };
 

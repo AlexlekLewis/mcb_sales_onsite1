@@ -10,7 +10,7 @@ export function CreateQuoteV2() {
     const navigate = useNavigate();
     const {
         data: { products, tabs, tabProducts, relevantFabrics, relevantPriceGroups, relevantExtras }, // removed selectedProduct unused here
-        quote: { customerName, setCustomerName, lineItems, overallMargin, setOverallMargin, showGst, totals, livePrice, liveWarning },
+        quote: { customerName, setCustomerName, lineItems, overallMargin, setOverallMargin, showGst, totals, livePrice, liveWarning, liveNote },
         form: {
             activeTab, setActiveTab,
             selectedProductId, setSelectedProductId,
@@ -187,9 +187,10 @@ export function CreateQuoteV2() {
                         const res = addQuoteItem();
                         if (res?.error) alert(res.error);
                     }}
-                    isValid={!!selectedProductId && (!liveWarning || livePrice > 0)}
+                    isValid={!!selectedProductId && !liveWarning}
                     livePrice={livePrice}
                     liveWarning={liveWarning}
+                    liveNote={liveNote}
                 />
             </div>
 

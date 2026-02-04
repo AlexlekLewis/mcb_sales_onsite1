@@ -167,8 +167,8 @@ export function useQuoteBuilder() {
 
     // --- Live Pricing Calculation ---
     // This ensures we always have a current price for the UI and validation
-    const { livePrice, liveWarning } = useMemo(() => {
-        if (!selectedProduct) return { livePrice: 0, liveWarning: undefined };
+    const { livePrice, liveWarning, liveNote } = useMemo(() => {
+        if (!selectedProduct) return { livePrice: 0, liveWarning: undefined, liveNote: undefined };
 
         // Parse Dimensions
         const w = parseInt(width) || 0;
@@ -176,7 +176,7 @@ export function useQuoteBuilder() {
         const qty = parseInt(quantity) || 1;
 
         // Base Price
-        const { price, warning } = calculatePrice(selectedProduct, w, d, { priceGroup: selectedPriceGroup, fullness });
+        const { price, warning, note } = calculatePrice(selectedProduct, w, d, { priceGroup: selectedPriceGroup, fullness });
 
         // Extras
         const extrasTotal = selectedExtras.reduce((sum, e) => sum + e.calculated_price, 0);
@@ -189,7 +189,8 @@ export function useQuoteBuilder() {
 
         return {
             livePrice: calculated_price,
-            liveWarning: warning
+            liveWarning: warning,  // Actual errors (blocks adding to quote)
+            liveNote: note         // Informational (pricing tier used)
         };
     }, [selectedProduct, width, drop, quantity, selectedPriceGroup, fullness, selectedExtras]);
 
@@ -371,7 +372,8 @@ export function useQuoteBuilder() {
             setShowGst,
             totals,
             livePrice,
-            liveWarning
+            liveWarning,
+            liveNote
         },
 
         // Input Form

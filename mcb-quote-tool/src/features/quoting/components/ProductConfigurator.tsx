@@ -36,7 +36,8 @@ interface ProductConfiguratorProps {
     onAdd: () => void;
     isValid: boolean;
     livePrice?: number;
-    liveWarning?: string;
+    liveWarning?: string;  // Actual errors that block adding
+    liveNote?: string;     // Informational (pricing tier used)
 }
 
 export function ProductConfigurator({
@@ -46,7 +47,7 @@ export function ProductConfigurator({
     priceGroups, selectedPriceGroup, onSelectedPriceGroupChange,
     extras, selectedExtras, onToggleExtra,
     formState, onFormChange,
-    onAdd, isValid, livePrice, liveWarning
+    onAdd, isValid, livePrice, liveWarning, liveNote
 }: ProductConfiguratorProps) {
 
     const selectedProduct = products.find(p => p.id === selectedProductId);
@@ -324,17 +325,19 @@ export function ProductConfigurator({
 
                             <div className="pt-4 pb-8 space-y-4">
                                 {/* Live Price Feedback */}
-                                {(livePrice !== undefined || liveWarning) && (
+                                {(livePrice !== undefined || liveWarning || liveNote) && (
                                     <div className={cn(
                                         "p-4 rounded-xl border flex items-center justify-between transition-all duration-300",
                                         liveWarning
                                             ? "bg-red-500/10 border-red-500/50 text-red-400"
-                                            : "bg-background-input border-white/10"
+                                            : liveNote
+                                                ? "bg-blue-500/10 border-blue-500/30 text-blue-300"
+                                                : "bg-background-input border-white/10"
                                     )}>
                                         <div className="flex items-center gap-3">
-                                            {liveWarning ? <Info size={20} /> : <span className="text-slate-400">Estimated Price:</span>}
+                                            {liveWarning ? <Info size={20} /> : liveNote ? <Info size={20} className="text-blue-400" /> : <span className="text-slate-400">Estimated Price:</span>}
                                             <span className="font-medium text-sm">
-                                                {liveWarning || 'Ready to add'}
+                                                {liveWarning || liveNote || 'Ready to add'}
                                             </span>
                                         </div>
                                         <div className={cn("text-2xl font-bold font-mono", liveWarning ? "text-red-500 opacity-50" : "text-white")}>
