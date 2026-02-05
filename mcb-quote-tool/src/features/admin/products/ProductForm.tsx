@@ -238,10 +238,23 @@ export function ProductForm() {
                             onChange={(e) => setFormData(prev => ({ ...prev, pricing_type: e.target.value }))}
                             className="w-full bg-[#1c1c24] border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-brand-orange transition-colors"
                         >
-                            <option value={PRICING_TYPES.GRID}>Grid (Width x Drop)</option>
-                            <option value={PRICING_TYPES.SQM}>Square Meter (Area)</option>
                             <option value={PRICING_TYPES.UNIT}>Unit Price (Simple)</option>
                         </select>
+                    </div>
+
+                    <div className="flex items-end pb-3">
+                        <label className="flex items-center gap-3 p-3 rounded-xl bg-white/5 border border-white/5 cursor-pointer hover:bg-white/10 transition-colors w-full">
+                            <input
+                                type="checkbox"
+                                checked={formData.is_active ?? true}
+                                onChange={e => setFormData(prev => ({ ...prev, is_active: e.target.checked }))}
+                                className="w-5 h-5 rounded border-gray-600 text-brand-orange focus:ring-brand-orange bg-[#1c1c24]"
+                            />
+                            <div>
+                                <span className="block text-sm font-semibold text-white">Active Status</span>
+                                <span className="text-xs text-slate-400">Uncheck to hide this product from new quotes</span>
+                            </div>
+                        </label>
                     </div>
                 </div>
 
