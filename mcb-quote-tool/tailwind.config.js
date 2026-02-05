@@ -6,49 +6,50 @@ export default {
     ],
     theme: {
         extend: {
+            fontFamily: {
+                sans: ['Manrope', 'sans-serif'],
+                serif: ['Cinzel', 'serif'],
+            },
             colors: {
-                // Brand colors
+                // Brand colors - Luxury Copper
                 brand: {
-                    orange: '#D97706',
-                    'orange-light': '#F59E0B',
-                    'orange-dark': '#B45309',
-                    blue: '#38BDF8',
-                    'blue-light': '#7DD3FC',
-                    'blue-dark': '#0EA5E9',
+                    DEFAULT: '#C17937', // Copper Main
+                    light: '#E69E5E',   // Copper Light
+                    dark: '#8B5322',    // Copper Dark
+                    orange: '#C17937',  // Legacy mapping to Copper
                 },
-                // Background colors - Navy
+                // Background colors - Matte Charcoal
                 background: {
-                    DEFAULT: '#0F172A',
-                    card: '#1E293B',
-                    input: '#0C1425',
-                },
-                // Surface overlays
-                surface: {
-                    DEFAULT: 'rgba(255, 255, 255, 0.05)',
-                    hover: 'rgba(255, 255, 255, 0.10)',
+                    DEFAULT: '#333333', // Charcoal Main
+                    secondary: '#2C2C2C', // Darker Charcoal
+                    card: '#404040',    // Lighter Charcoal for cards
+                    input: '#262626',   // Dark input bg
                 },
                 // Text colors
                 text: {
-                    primary: '#FFFFFF',
-                    secondary: '#CBD5E1',
-                    muted: '#94A3B8',
+                    primary: '#F3F4F6', // Off-white
+                    secondary: '#D1D5DB', // Light Gray
+                    muted: '#9CA3AF',   // Muted Gray
+                    copper: '#C17937',  // Copper Text
                 },
             },
             borderColor: {
                 subtle: 'rgba(255, 255, 255, 0.05)',
                 muted: 'rgba(255, 255, 255, 0.10)',
+                copper: 'rgba(193, 121, 55, 0.5)', // Copper border
             },
             boxShadow: {
-                'orange-glow': '0 0 20px rgba(217, 119, 6, 0.3)',
-                'glass': '0 4px 30px rgba(0, 0, 0, 0.1)',
-                'neon': '0 0 10px rgba(217, 119, 6, 0.5), 0 0 20px rgba(217, 119, 6, 0.3)',
+                'copper-glow': '0 0 20px rgba(193, 121, 55, 0.3)',
+                'glass': '0 4px 30px rgba(0, 0, 0, 0.2)',
+                'neon': '0 0 10px rgba(193, 121, 55, 0.4), 0 0 20px rgba(193, 121, 55, 0.2)',
             },
             dropShadow: {
-                'glow': '0 0 8px rgba(217, 119, 6, 0.5)',
+                'glow': '0 0 8px rgba(193, 121, 55, 0.5)',
             },
             backgroundImage: {
-                'orange-gradient': 'linear-gradient(135deg, #D97706 0%, #F59E0B 100%)',
-                'glass-gradient': 'linear-gradient(180deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.02) 100%)',
+                'copper-gradient': 'linear-gradient(135deg, #C17937 0%, #E69E5E 100%)',
+                'charcoal-gradient': 'linear-gradient(180deg, #333333 0%, #4A4A4A 100%)',
+                'glass-gradient': 'linear-gradient(180deg, rgba(64, 64, 64, 0.7) 0%, rgba(64, 64, 64, 0.4) 100%)',
             },
         },
     },

@@ -8,7 +8,7 @@ interface AppLayoutProps {
 
 export function AppLayout({ children }: AppLayoutProps) {
     return (
-        <div className="flex h-screen bg-background text-white font-sans overflow-hidden">
+        <div className="flex h-screen bg-charcoal-gradient text-text-primary font-sans overflow-hidden">
             <SlimSidebar />
 
             <main className="flex-1 flex flex-col min-w-0 bg-background overflow-hidden relative">

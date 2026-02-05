@@ -25,10 +25,10 @@ const SidebarItem = ({ icon: Icon, label, path }: SidebarItemProps) => {
         <NavLink
             to={path}
             className={({ isActive }) => cn(
-                "relative flex items-center justify-center w-12 h-12 rounded-xl transition-all duration-300 group mb-2",
+                "relative flex items-center justify-center w-12 h-12 rounded-xl transition-all duration-300 group",
                 isActive
-                    ? "text-white bg-brand-orange shadow-[0_0_15px_rgba(217,119,6,0.3)]"
-                    : "text-slate-400 hover:text-white hover:bg-white/10"
+                    ? "text-white bg-brand shadow-copper-glow"
+                    : "text-text-muted hover:text-white hover:bg-white/5"
             )}
             title={label}
         >
@@ -44,27 +44,27 @@ const SidebarItem = ({ icon: Icon, label, path }: SidebarItemProps) => {
 
 export function SlimSidebar() {
     return (
-        <aside className="w-[72px] flex flex-col items-center py-6 bg-background-card border-r border-white/5 h-screen z-20">
+        <aside className="w-[80px] flex flex-col items-center py-6 bg-[#2C2C2C] border-r border-white/5 h-screen z-20 backdrop-blur-md">
             {/* Logo */}
             <div className="mb-8 p-0">
-                <div className="w-10 h-10 bg-[linear-gradient(135deg,#D97706,#F59E0B)] rounded-xl flex items-center justify-center shadow-orange-glow">
-                    <LayoutDashboard size={20} className="text-white" />
+                <div className="w-12 h-12 bg-copper-gradient rounded-full flex items-center justify-center shadow-copper-glow border border-white/10">
+                    <span className="font-serif font-bold text-lg text-white">MCB</span>
                 </div>
             </div>
 
             {/* Main Nav */}
-            <nav className="flex-1 w-full px-3 flex flex-col items-center gap-1">
+            <nav className="flex-1 w-full px-4 flex flex-col items-center gap-3">
                 <SidebarItem icon={LayoutDashboard} label="Dashboard" path="/" />
                 <SidebarItem icon={Users} label="Clients" path="/clients" />
                 <SidebarItem icon={FileText} label="Quotes" path="/quotes" />
 
-                <div className="my-2 w-8 h-px bg-white/10" />
+                <div className="my-2 w-10 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
 
                 <SidebarItem icon={Plus} label="New Quote" path="/quotes/new" />
             </nav>
 
             {/* Bottom Actions */}
-            <div className="w-full px-3 flex flex-col items-center gap-2 mb-4">
+            <div className="w-full px-4 flex flex-col items-center gap-3 mb-6">
                 <SidebarItem icon={Settings} label="Admin Settings" path="/admin" />
                 <button className="w-12 h-12 flex items-center justify-center rounded-xl text-slate-400 hover:text-red-400 hover:bg-white/5 transition-colors" title="Logout">
                     <LogOut size={20} />
@@ -72,7 +72,7 @@ export function SlimSidebar() {
             </div>
 
             {/* Profile Avatar */}
-            <div className="w-10 h-10 rounded-lg bg-brand-orange/20 border border-brand-orange/30 flex items-center justify-center text-xs font-bold text-brand-orange cursor-pointer hover:ring-2 ring-brand-orange/50 transition-all">
+            <div className="w-10 h-10 rounded-full bg-brand/10 border border-brand/40 flex items-center justify-center text-xs font-bold text-brand shadow-[0_0_10px_rgba(193,121,55,0.2)] cursor-pointer hover:ring-2 ring-brand/50 transition-all">
                 AL
             </div>
         </aside>

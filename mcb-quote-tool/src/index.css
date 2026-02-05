@@ -2,8 +2,7 @@
 
 @layer base {
   body {
-    background-color: #0F172A;
-    @apply text-white antialiased;
+    @apply bg-background text-text-primary font-sans antialiased;
   }
 
   /* Improve text rendering */
