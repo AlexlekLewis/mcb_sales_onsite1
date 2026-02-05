@@ -14,7 +14,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { cn } from '../../lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 
-import logo from '../../assets/Logo_Dark.png';
+import logo from '../../assets/Logo_iso.png';
 
 const SidebarItem = ({ icon: Icon, label, path, badge, onClick }: { icon: any, label: string, path: string, badge?: number, onClick?: () => void }) => {
     const location = useLocation();
@@ -62,14 +62,12 @@ const SidebarItem = ({ icon: Icon, label, path, badge, onClick }: { icon: any, l
 const SidebarContent = ({ onItemClick }: { onItemClick?: () => void }) => (
     <>
         {/* Logo Area */}
-        <div className="flex flex-col items-center justify-center py-6 mb-4">
-            <div className="w-32 h-32 relative mb-2">
-                <img
-                    src={logo}
-                    alt="MCB Logo"
-                    className="w-full h-full object-contain drop-shadow-[0_0_15px_rgba(217,119,6,0.3)]"
-                />
-            </div>
+        <div className="w-32 h-32 relative mb-2">
+            <img
+                src={logo}
+                alt="MCB Logo"
+                className="w-full h-full object-contain drop-shadow-[0_0_15px_rgba(217,119,6,0.3)]"
+            />
         </div>
 
         {/* Menu Items */}

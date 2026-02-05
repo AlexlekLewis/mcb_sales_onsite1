@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { motion } from 'framer-motion';
+import logo from '../../assets/Logo_iso.png';
 
 interface SidebarItemProps {
     icon: any;
@@ -46,9 +47,10 @@ export function SlimSidebar() {
     return (
         <aside className="w-[80px] flex flex-col items-center py-6 bg-[#2C2C2C] border-r border-white/5 h-screen z-20 backdrop-blur-md">
             {/* Logo */}
+            {/* Logo */}
             <div className="mb-8 p-0">
-                <div className="w-12 h-12 bg-copper-gradient rounded-full flex items-center justify-center shadow-copper-glow border border-white/10">
-                    <span className="font-serif font-bold text-lg text-white">MCB</span>
+                <div className="w-12 h-12 flex items-center justify-center">
+                    <img src={logo} alt="MCB" className="w-full h-full object-contain drop-shadow-copper-glow" />
                 </div>
             </div>
 
