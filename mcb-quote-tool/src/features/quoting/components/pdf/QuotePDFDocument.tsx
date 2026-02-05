@@ -2,7 +2,7 @@ import React from 'react';
 import { Page, Text, View, Document, StyleSheet, Font, Image } from '@react-pdf/renderer';
 import { Quote, QuoteItemFull } from '../../types';
 import { formatCurrency } from '../../margin-utils';
-import logo from '../../../../assets/Logo_Sq.png';
+import logo from '../../../../assets/Logo_Dark.png';
 
 // Register a standard font if we want custom fonts later. 
 // For now, Helvetica is built-in and fine.

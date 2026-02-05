@@ -14,7 +14,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { cn } from '../../lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 
-import logo from '../../assets/Logo_Sq.png';
+import logo from '../../assets/Logo_Dark.png';
 
 const SidebarItem = ({ icon: Icon, label, path, badge, onClick }: { icon: any, label: string, path: string, badge?: number, onClick?: () => void }) => {
     const location = useLocation();
