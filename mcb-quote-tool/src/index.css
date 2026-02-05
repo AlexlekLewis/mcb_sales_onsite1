@@ -1,12 +1,38 @@
 @import "tailwindcss";
 
+@theme {
+  --font-sans: 'Manrope', sans-serif;
+  --font-serif: 'Cinzel', serif;
+
+  --color-brand: #C17937;
+  --color-brand-light: #E69E5E;
+  --color-brand-dark: #8B5322;
+  --color-brand-orange: #C17937;
+
+  --color-background: #333333;
+  --color-background-secondary: #2C2C2C;
+  --color-background-card: #404040;
+  --color-background-input: #262626;
+
+  --color-text-primary: #F3F4F6;
+  --color-text-secondary: #D1D5DB;
+  --color-text-muted: #9CA3AF;
+  --color-text-copper: #C17937;
+
+  --shadow-copper-glow: 0 0 20px rgba(193, 121, 55, 0.3);
+  --shadow-glass: 0 4px 30px rgba(0, 0, 0, 0.2);
+  --shadow-neon: 0 0 10px rgba(193, 121, 55, 0.4), 0 0 20px rgba(193, 121, 55, 0.2);
+
+  --image-copper-gradient: linear-gradient(135deg, #C17937 0%, #E69E5E 100%);
+  --image-charcoal-gradient: linear-gradient(180deg, #333333 0%, #4A4A4A 100%);
+  --image-glass-gradient: linear-gradient(180deg, rgba(64, 64, 64, 0.7) 0%, rgba(64, 64, 64, 0.4) 100%);
+}
+
 @layer base {
   body {
-    @apply bg-background text-text-primary font-sans antialiased;
-  }
-
-  /* Improve text rendering */
-  * {
+    background-color: var(--color-background);
+    color: var(--color-text-primary);
+    font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
