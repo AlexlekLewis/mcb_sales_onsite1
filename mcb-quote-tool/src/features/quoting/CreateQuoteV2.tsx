@@ -189,7 +189,7 @@ export function CreateQuoteV2() {
 
                     onAdd={() => {
                         const res = addQuoteItem();
-                        if (res?.error) alert(res.error);
+                        // Toast handled inside addQuoteItem
                     }}
                     isValid={(() => {
                         const w = parseInt(width);

@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { supabase } from '../../../lib/supabase';
-import { Product, Fabric, PriceGroup, SelectedExtra, ProductExtra, EnhancedQuoteItem } from '../types';
+import { toast } from 'react-hot-toast';
+import { Product, ProductExtra, Quote, QuoteItem, Fabric, PriceGroup, SelectedExtra, EnhancedQuoteItem } from '../types';
 import { calculatePrice, calculateExtraPrice } from '../pricing';
 import { applySingleMargin } from '../margin-utils';
 
@@ -248,164 +249,225 @@ export function useQuoteBuilder() {
         const { price, warning } = calculatePrice(selectedProduct, w, d, { priceGroup: selectedPriceGroup, fullness });
 
         // STRICT VALIDATION: Block $0 prices if there is a warning or if regular pricing failed
-        // Note: Some extras might add cost, but base product price shouldn't be zero unless allowed.
-        // Assuming most products must have a base price.
-        if (price === 0 && warning) {
-            console.warn("Blocked invalid price:", warning);
+        // A warning usually means "out of grid", but we should also check explicit invalid dims
+        if (w <= 0 && showW) {
+            toast.error('Width must be greater than 0');
+            return { error: 'Invalid width' };
+        }
+        if (d <= 0 && showD) {
+            toast.error('Drop must be greater than 0');
+            return { error: 'Invalid drop' };
+        }
+        if (warning) {
+            toast.error(warning);
             return { error: warning };
         }
-        if (price === 0 && selectedProduct.pricing_type !== 'Unit') { // Allow Unit items if they naturally can be 0? Maybe not.
-            // Double check standard grid logic
+
+        // Final price check
+        const unitPrice = price + selectedExtras.reduce((s, e) => s + e.calculated_price, 0);
+        if (unitPrice <= 0) {
+            toast.error('Price cannot be zero. Check dimensions.');
+            return { error: 'Price is zero' };
         }
 
-        const productPrice = price * qty;
+        const calculated_price = unitPrice * qty;
 
-        const extrasTotal = selectedExtras.reduce((sum, e) => sum + e.calculated_price, 0);
-        const costPerUnit = price + extrasTotal;
-        const totalPrice = costPerUnit * qty;
-
-        const newItem: EnhancedQuoteItem = {
+        const newItem: QuoteItem = {
             id: crypto.randomUUID(),
-            product_id: selectedProduct.id,
+            product_id: selectedProductId,
             product_name: selectedProduct.supplier === selectedProduct.name || selectedProduct.name.startsWith(selectedProduct.supplier)
                 ? selectedProduct.name
                 : `${selectedProduct.supplier} - ${selectedProduct.name}`,
+            product_category: selectedProduct.category,
             width: w,
             drop: d,
             quantity: qty,
-            calculated_price: totalPrice,
-            pricing_note: warning,
-            price_group: selectedPriceGroup?.group_name,
-            extras: selectedExtras.length > 0 ? [...selectedExtras] : undefined,
-            location: '',
-            cost_price: costPerUnit,
-            margin_percent: null,
-            sell_price: applySingleMargin(costPerUnit, overallMargin),
-            discount_percent: 0,
-            fabric_name: fabric ? `${fabric.brand} ${fabric.name}` : '',
+            price_group: selectedPriceGroup?.name, // Store name for display
+            fabric_name: fabric?.name,
+            fabric_price_group: fabric?.price_group,
             notes: '',
+            calculated_price: calculated_price,
+            cost_price: calculated_price, // Assuming cost = sell for now if no markup logic yet
+            sell_price: calculated_price,
+            extras: selectedExtras.map(e => ({
+                id: e.id,
+                name: e.name,
+                price: e.calculated_price
+            })),
+            pricing_note: `Priced @ ${w}W x ${d}D Bracket`,
         };
 
-        setQuoteItems([...lineItems, newItem]);
+        setLineItems(prev => [...prev, newItem]);
+        toast.success(`Added ${newItem.product_name} to quote`);
 
-        // Reset Form - Keep Product/Fabric selections for rapid entry
-        // setSelectedProductId('');
-        // setSelectedFabricId('');
+        // Reset ONLY dimensions/qty/extras for rapid entry of similar items
+        // Keep Product/Fabric selections
         setWidth('');
         setDrop('');
-        setQuantity('1');
-        // setSelectedPriceGroup(null);
+        setQuantity('1'); // Reset to 1
+        // setSelectedPriceGroup(null); // Keep price group if manual override? No, usually auto.
         setSelectedExtras([]);
-        // setShowExtras(false); // UI state, handle in component
-        setFullness('100');
+        // setFullness('100'); // Keep fullness context?
 
         return { success: true };
+    };        // Note: Some extras might add cost, but base product price shouldn't be zero unless allowed.
+    // Assuming most products must have a base price.
+    if (price === 0 && warning) {
+        console.warn("Blocked invalid price:", warning);
+        return { error: warning };
+    }
+    if (price === 0 && selectedProduct.pricing_type !== 'Unit') { // Allow Unit items if they naturally can be 0? Maybe not.
+        // Double check standard grid logic
+    }
+
+    const productPrice = price * qty;
+
+    const extrasTotal = selectedExtras.reduce((sum, e) => sum + e.calculated_price, 0);
+    const costPerUnit = price + extrasTotal;
+    const totalPrice = costPerUnit * qty;
+
+    const newItem: EnhancedQuoteItem = {
+        id: crypto.randomUUID(),
+        product_id: selectedProduct.id,
+        product_name: selectedProduct.supplier === selectedProduct.name || selectedProduct.name.startsWith(selectedProduct.supplier)
+            ? selectedProduct.name
+            : `${selectedProduct.supplier} - ${selectedProduct.name}`,
+        width: w,
+        drop: d,
+        quantity: qty,
+        calculated_price: totalPrice,
+        pricing_note: warning,
+        price_group: selectedPriceGroup?.group_name,
+        extras: selectedExtras.length > 0 ? [...selectedExtras] : undefined,
+        location: '',
+        cost_price: costPerUnit,
+        margin_percent: null,
+        sell_price: applySingleMargin(costPerUnit, overallMargin),
+        discount_percent: 0,
+        fabric_name: fabric ? `${fabric.brand} ${fabric.name}` : '',
+        notes: '',
     };
 
-    const removeQuoteItem = (id: string) => {
-        setQuoteItems(lineItems.filter(item => item.id !== id));
-    };
+    setQuoteItems([...lineItems, newItem]);
 
-    const updateQuoteItem = (id: string, updates: Partial<EnhancedQuoteItem>) => {
+    // Reset Form - Keep Product/Fabric selections for rapid entry
+    // setSelectedProductId('');
+    // setSelectedFabricId('');
+    setWidth('');
+    setDrop('');
+    setQuantity('1');
+    // setSelectedPriceGroup(null);
+    setSelectedExtras([]);
+    // setShowExtras(false); // UI state, handle in component
+    setFullness('100');
+
+    return { success: true };
+};
+
+const removeQuoteItem = (id: string) => {
+    setQuoteItems(lineItems.filter(item => item.id !== id));
+};
+
+const updateQuoteItem = (id: string, updates: Partial<EnhancedQuoteItem>) => {
+    setQuoteItems(items => items.map(item => {
+        if (item.id !== id) return item;
+
+        const updatedItem = { ...item, ...updates };
+
+        // Recalculate prices if relevant fields change
+        if ('margin_percent' in updates || 'quantity' in updates) {
+            const effectiveMargin = updatedItem.margin_percent !== null ? updatedItem.margin_percent : overallMargin;
+            updatedItem.sell_price = applySingleMargin(updatedItem.cost_price, effectiveMargin);
+            updatedItem.calculated_price = updatedItem.sell_price * updatedItem.quantity;
+        }
+        return updatedItem;
+    }));
+};
+
+// Apply Margin Logic
+useEffect(() => {
+    if (lineItems.length > 0) {
         setQuoteItems(items => items.map(item => {
-            if (item.id !== id) return item;
-
-            const updatedItem = { ...item, ...updates };
-
-            // Recalculate prices if relevant fields change
-            if ('margin_percent' in updates || 'quantity' in updates) {
-                const effectiveMargin = updatedItem.margin_percent !== null ? updatedItem.margin_percent : overallMargin;
-                updatedItem.sell_price = applySingleMargin(updatedItem.cost_price, effectiveMargin);
-                updatedItem.calculated_price = updatedItem.sell_price * updatedItem.quantity;
+            if (item.margin_percent === null) {
+                const sell_price = applySingleMargin(item.cost_price, overallMargin);
+                return {
+                    ...item,
+                    sell_price,
+                    calculated_price: sell_price * item.quantity
+                };
             }
-            return updatedItem;
+            return item;
         }));
-    };
+    }
+}, [overallMargin]); // Warning: This might trigger purely on lineItems change loops if strict dependency used improperly, but lineItems is not in dependency array which is correct for this effect (responds to overallMargin change)
 
-    // Apply Margin Logic
-    useEffect(() => {
-        if (lineItems.length > 0) {
-            setQuoteItems(items => items.map(item => {
-                if (item.margin_percent === null) {
-                    const sell_price = applySingleMargin(item.cost_price, overallMargin);
-                    return {
-                        ...item,
-                        sell_price,
-                        calculated_price: sell_price * item.quantity
-                    };
-                }
-                return item;
-            }));
-        }
-    }, [overallMargin]); // Warning: This might trigger purely on lineItems change loops if strict dependency used improperly, but lineItems is not in dependency array which is correct for this effect (responds to overallMargin change)
+// --- Totals ---
+const totals = useMemo(() => {
+    const totalCost = lineItems.reduce((sum, item) => sum + (item.cost_price * item.quantity), 0);
+    const totalSell = lineItems.reduce((sum, item) => {
+        const effectiveMargin = item.margin_percent !== null ? item.margin_percent : overallMargin;
+        const sell = applySingleMargin(item.cost_price, effectiveMargin);
+        return sum + (sell * item.quantity);
+    }, 0);
+    const totalMargin = totalSell - totalCost;
+    const avgMarginPercent = totalCost > 0 ? (totalMargin / totalCost) * 100 : 0;
+    const gst = totalSell * 0.1;
+    const totalIncGst = totalSell + gst;
 
-    // --- Totals ---
-    const totals = useMemo(() => {
-        const totalCost = lineItems.reduce((sum, item) => sum + (item.cost_price * item.quantity), 0);
-        const totalSell = lineItems.reduce((sum, item) => {
-            const effectiveMargin = item.margin_percent !== null ? item.margin_percent : overallMargin;
-            const sell = applySingleMargin(item.cost_price, effectiveMargin);
-            return sum + (sell * item.quantity);
-        }, 0);
-        const totalMargin = totalSell - totalCost;
-        const avgMarginPercent = totalCost > 0 ? (totalMargin / totalCost) * 100 : 0;
-        const gst = totalSell * 0.1;
-        const totalIncGst = totalSell + gst;
+    return { totalCost, totalSell, totalMargin, avgMarginPercent, gst, totalIncGst };
+}, [lineItems, overallMargin]);
 
-        return { totalCost, totalSell, totalMargin, avgMarginPercent, gst, totalIncGst };
-    }, [lineItems, overallMargin]);
+return {
+    // Data
+    data: {
+        products,
+        extras,
+        priceGroups,
+        fabrics,
+        tabs,
+        tabProducts,
+        relevantFabrics,
+        relevantPriceGroups,
+        relevantExtras,
+        selectedProduct,
+    },
+    loading,
+    error,
 
-    return {
-        // Data
-        data: {
-            products,
-            extras,
-            priceGroups,
-            fabrics,
-            tabs,
-            tabProducts,
-            relevantFabrics,
-            relevantPriceGroups,
-            relevantExtras,
-            selectedProduct,
-        },
-        loading,
-        error,
+    // Quote
+    quote: {
+        customerName,
+        setCustomerName,
+        lineItems,
+        overallMargin,
+        setOverallMargin,
+        showGst,
+        setShowGst,
+        totals,
+        livePrice,
+        liveWarning,
+        liveNote
+    },
 
-        // Quote
-        quote: {
-            customerName,
-            setCustomerName,
-            lineItems,
-            overallMargin,
-            setOverallMargin,
-            showGst,
-            setShowGst,
-            totals,
-            livePrice,
-            liveWarning,
-            liveNote
-        },
+    // Input Form
+    form: {
+        activeTab, setActiveTab,
+        selectedProductId, setSelectedProductId,
+        selectedFabricId, setSelectedFabricId,
+        width, setWidth,
+        drop, setDrop,
+        quantity, setQuantity,
+        selectedPriceGroup, setSelectedPriceGroup,
+        selectedExtras, setSelectedExtras,
+        fullness, setFullness,
+    },
 
-        // Input Form
-        form: {
-            activeTab, setActiveTab,
-            selectedProductId, setSelectedProductId,
-            selectedFabricId, setSelectedFabricId,
-            width, setWidth,
-            drop, setDrop,
-            quantity, setQuantity,
-            selectedPriceGroup, setSelectedPriceGroup,
-            selectedExtras, setSelectedExtras,
-            fullness, setFullness,
-        },
-
-        // Actions
-        actions: {
-            toggleExtra,
-            addQuoteItem,
-            removeQuoteItem,
-            updateQuoteItem,
-        }
-    };
+    // Actions
+    actions: {
+        toggleExtra,
+        addQuoteItem,
+        removeQuoteItem,
+        updateQuoteItem,
+    }
+};
 }

@@ -291,18 +291,21 @@ export function QuoteDetails() {
                         </button>
                     </>
                 )}
-                <PDFDownloadLink
-                    document={<QuotePDFDocument quote={quote} items={items} />}
-                    fileName={`Quote - ${quote.customer_name}.pdf`}
-                    className="px-4 py-2 bg-white/5 hover:bg-white/10 text-white text-sm font-medium rounded-xl transition-all flex items-center gap-2 border border-white/10"
-                >
-                    {({ loading }) => (
-                        <>
-                            {loading ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
-                            {loading ? 'Generating...' : 'Download PDF'}
-                        </>
-                    )}
-                </PDFDownloadLink>
+                {/* Only render PDF Link when fully loaded to avoid render loops/crashes */}
+                {!loading && quote && items.length > 0 && (
+                    <PDFDownloadLink
+                        document={<QuotePDFDocument quote={quote} items={items} />}
+                        fileName={`Quote - ${quote.customer_name}.pdf`}
+                        className="px-4 py-2 bg-white/5 hover:bg-white/10 text-white text-sm font-medium rounded-xl transition-all flex items-center gap-2 border border-white/10"
+                    >
+                        {({ loading: pdfLoading }) => (
+                            <>
+                                {pdfLoading ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
+                                {pdfLoading ? 'Generating...' : 'Download PDF'}
+                            </>
+                        )}
+                    </PDFDownloadLink>
+                )}
                 <button
                     onClick={() => setEmailModalOpen(true)}
                     className="px-4 py-2 bg-brand-orange hover:bg-brand-orange-light text-white text-sm font-medium rounded-xl transition-all flex items-center gap-2 shadow-lg shadow-brand-orange/20"
@@ -387,7 +390,7 @@ export function QuoteDetails() {
                                                     </td>
                                                     <td className="p-4 text-slate-300">{discountPercent.toFixed(2)}%</td>
                                                     <td className="p-4 text-slate-300">${discountAmount.toFixed(2)}</td>
-                                                    <td className="p-4 text-slate-300 max-w-[150px] truncate" title={itemAny.item_config?.fabric_name}>
+                                                    <td className="p-4 text-slate-300 max-w-[250px] truncate" title={itemAny.item_config?.fabric_name}>
                                                         {itemAny.item_config?.fabric_name || 'Standard'}
                                                     </td>
                                                     <td className="p-4 text-slate-300 text-xs max-w-[200px]">

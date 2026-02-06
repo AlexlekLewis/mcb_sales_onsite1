@@ -46,13 +46,14 @@ const SidebarItem = ({ icon: Icon, label, path }: SidebarItemProps) => {
 
 export function SlimSidebar() {
 
-    const handleLogout = async () => {
+    const handleLogout = async (e: React.MouseEvent) => {
+        e.preventDefault();
         try {
-            await supabase.auth.signOut(); // Removed logic to clear local storage manually as Supabase handles session
-            // Force reload/redirect to ensure clean state
-            window.location.href = '/login';
+            await supabase.auth.signOut();
         } catch (error) {
-            console.error('Error signing out:', error);
+            console.error('Error logging out:', error);
+        } finally {
+            window.location.href = '/login';
         }
     };
 
