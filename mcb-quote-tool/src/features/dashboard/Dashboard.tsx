@@ -98,10 +98,16 @@ export function Dashboard() {
                     <Link
                         key={i}
                         to={action.href}
-                        className={`${action.color} p-4 rounded-xl flex items-center gap-3 transition-all hover:scale-[1.02] active:scale-[0.98] shadow-glass`}
+                        onClick={(e) => {
+                            if (action.href === '#' || action.label === 'Voice Notes' || action.label === 'Site Photos') {
+                                e.preventDefault();
+                                alert(`${action.label} is coming soon!`);
+                            }
+                        }}
+                        className={`${action.color} p-4 rounded-xl flex items-center gap-3 transition-all hover:scale-[1.02] active:scale-[0.98] shadow-glass ${['Voice Notes', 'Site Photos'].includes(action.label) ? 'opacity-60 grayscale cursor-not-allowed' : ''}`}
                     >
                         <action.icon size={20} />
-                        <span className="font-medium">{action.label}</span>
+                        <span className="font-medium">{action.label} {['Voice Notes', 'Site Photos'].includes(action.label) && <span className="ml-2 text-xs bg-white/10 px-1.5 py-0.5 rounded text-white/70">Soon</span>}</span>
                     </Link>
                 ))}
             </div>

@@ -69,7 +69,7 @@ const calculateCurtainPrice = (data: GridPricingData, w: number, d: number, { pr
 
     return {
         price,
-        note: `Priced @ ${width_steps[widthIndex]}W x ${drop_steps[dropIndex]}D`
+        note: `Priced @ ${width_steps[widthIndex]}W x ${drop_steps[dropIndex]}D Bracket`
     };
 };
 
@@ -98,7 +98,7 @@ const calculateExternalBlindPrice = (data: GridPricingData, w: number, d: number
 
     return {
         price: finalPrice,
-        note: `Priced @ ${width_steps[widthIndex]}W x ${drop_steps[dropIndex]}D`
+        note: `Priced @ ${width_steps[widthIndex]}W x ${drop_steps[dropIndex]}D Bracket`
     };
 };
 
@@ -139,7 +139,7 @@ const calculateStandardGridPrice = (data: GridPricingData, w: number, d: number,
 
     return {
         price: finalPrice,
-        note: `Priced @ ${width_steps[widthIndex]}W x ${drop_steps[dropIndex]}D`
+        note: `Priced @ ${width_steps[widthIndex]}W x ${drop_steps[dropIndex]}D Bracket`
     };
 };
 

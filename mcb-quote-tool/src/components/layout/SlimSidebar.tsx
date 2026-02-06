@@ -13,6 +13,7 @@ import {
 import { cn } from '../../lib/utils';
 import { motion } from 'framer-motion';
 import logo from '../../assets/Logo_iso.png';
+import { supabase } from '../../lib/supabase';
 
 interface SidebarItemProps {
     icon: any;
@@ -44,6 +45,17 @@ const SidebarItem = ({ icon: Icon, label, path }: SidebarItemProps) => {
 };
 
 export function SlimSidebar() {
+
+    const handleLogout = async () => {
+        try {
+            await supabase.auth.signOut(); // Removed logic to clear local storage manually as Supabase handles session
+            // Force reload/redirect to ensure clean state
+            window.location.href = '/login';
+        } catch (error) {
+            console.error('Error signing out:', error);
+        }
+    };
+
     return (
         <aside className="w-[80px] flex flex-col items-center py-6 bg-[#2C2C2C] border-r border-white/5 h-screen z-20 backdrop-blur-md">
             {/* Logo */}
@@ -68,7 +80,11 @@ export function SlimSidebar() {
             {/* Bottom Actions */}
             <div className="w-full px-4 flex flex-col items-center gap-3 mb-6">
                 <SidebarItem icon={Settings} label="Admin Settings" path="/admin" />
-                <button className="w-12 h-12 flex items-center justify-center rounded-xl text-slate-400 hover:text-red-400 hover:bg-white/5 transition-colors" title="Logout">
+                <button
+                    onClick={handleLogout}
+                    className="w-12 h-12 flex items-center justify-center rounded-xl text-slate-400 hover:text-red-400 hover:bg-white/5 transition-colors"
+                    title="Logout"
+                >
                     <LogOut size={20} />
                 </button>
             </div>

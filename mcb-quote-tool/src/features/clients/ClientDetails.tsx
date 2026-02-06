@@ -102,13 +102,22 @@ export function ClientDetails() {
                     <h2 className="text-2xl font-bold text-white">{client.name}</h2>
                     <p className="text-slate-300">Added {new Date(client.created_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })}</p>
                 </div>
-                <button
-                    onClick={deleteClient}
-                    className="px-4 py-2 bg-white/5 hover:bg-red-600/20 text-red-400 text-sm font-medium rounded-xl transition-all flex items-center gap-2 border border-white/10"
-                >
-                    <Trash2 size={16} />
-                    Delete
-                </button>
+                <div className="flex items-center gap-2">
+                    <Link
+                        to={`/clients/${client.id}/edit`}
+                        className="px-4 py-2 bg-white/5 hover:bg-white/10 text-brand-orange text-sm font-medium rounded-xl transition-all flex items-center gap-2 border border-white/10"
+                    >
+                        <Edit2 size={16} />
+                        Edit
+                    </Link>
+                    <button
+                        onClick={deleteClient}
+                        className="px-4 py-2 bg-white/5 hover:bg-red-600/20 text-red-400 text-sm font-medium rounded-xl transition-all flex items-center gap-2 border border-white/10"
+                    >
+                        <Trash2 size={16} />
+                        Delete
+                    </button>
+                </div>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -179,9 +188,9 @@ export function ClientDetails() {
                                             </p>
                                         </div>
                                         <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${quote.status === 'approved' ? 'bg-green-500/10 text-green-400' :
-                                                quote.status === 'sent' ? 'bg-blue-500/10 text-blue-400' :
-                                                    quote.status === 'rejected' ? 'bg-red-500/10 text-red-400' :
-                                                        'bg-gray-500/10 text-slate-300'
+                                            quote.status === 'sent' ? 'bg-blue-500/10 text-blue-400' :
+                                                quote.status === 'rejected' ? 'bg-red-500/10 text-red-400' :
+                                                    'bg-gray-500/10 text-slate-300'
                                             }`}>
                                             {quote.status}
                                         </span>
@@ -192,6 +201,6 @@ export function ClientDetails() {
                     </div>
                 </div>
             </div>
-        </div>
+        </div >
     );
 }

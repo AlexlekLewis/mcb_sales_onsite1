@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Loader2, Save } from 'lucide-react';
+import { ArrowLeft, Loader2, Save, LogOut } from 'lucide-react';
 import { useQuoteBuilder } from './hooks/useQuoteBuilder';
 import { supabase } from '../../lib/supabase';
 import { ProductConfigurator } from './components/ProductConfigurator';
@@ -46,58 +46,62 @@ export function CreateQuoteV2() {
         }
 
         setSaving(true);
-        const { data: quote, error: quoteError } = await supabase
-            .from('quotes')
-            .insert({
-                customer_name: customerName || 'Unnamed Quote',
-                status: 'draft',
-                total_amount: totals.totalSell,
-                overall_margin_percent: overallMargin,
-                show_gst: showGst
-            })
-            .select()
-            .single();
+        try {
+            const { data: quote, error: quoteError } = await supabase
+                .from('quotes')
+                .insert({
+                    customer_name: customerName || 'Unnamed Quote',
+                    status: 'draft',
+                    total_amount: totals.totalSell,
+                    overall_margin_percent: overallMargin,
+                    show_gst: showGst
+                })
+                .select()
+                .single();
 
-        if (quoteError || !quote) {
-            console.error(quoteError);
-            alert('Error creating quote');
-            setSaving(false);
-            return;
-        }
-
-        if (lineItems.length > 0) {
-            const items = lineItems.map(item => ({
-                quote_id: quote.id,
-                product_id: item.product_id,
-                width: item.width,
-                drop: item.drop,
-                quantity: item.quantity,
-                calculated_price: item.calculated_price,
-                location: item.location || null,
-                cost_price: item.cost_price,
-                item_margin_percent: item.margin_percent ?? overallMargin,
-                sell_price: item.sell_price,
-                notes: item.extras ? `Extras: ${item.extras.map(e => e.name).join(', ')}` : null,
-                item_config: {
-                    fabric_name: item.fabric_name || null,
-                    price_group: item.price_group || null,
-                    extras: item.extras || [],
-                    notes: item.pricing_note || null,
-                    fullness: item.product_name.includes('Curtains') ? item.fabric_name : undefined
-                    // Note: 'fullness' logic in original was implicit. 
-                    // Storing it in item_config helps reproduction.
-                }
-            }));
-
-            const { error: itemsError } = await supabase.from('quote_items').insert(items);
-            if (itemsError) {
-                console.error(itemsError);
-                alert('Quote created but failed to save items.');
+            if (quoteError || !quote) {
+                console.error("Quote creation failed:", quoteError);
+                throw new Error(quoteError?.message || 'Failed to create quote record');
             }
-        }
 
-        setSaving(false);
-        navigate('/quotes');
+            if (lineItems.length > 0) {
+                const items = lineItems.map(item => ({
+                    quote_id: quote.id,
+                    product_id: item.product_id,
+                    width: item.width,
+                    drop: item.drop,
+                    quantity: item.quantity,
+                    calculated_price: item.calculated_price,
+                    location: item.location || null,
+                    cost_price: item.cost_price,
+                    item_margin_percent: item.margin_percent ?? overallMargin,
+                    sell_price: item.sell_price,
+                    notes: item.extras ? `Extras: ${item.extras.map(e => e.name).join(', ')}` : null,
+                    item_config: {
+                        fabric_name: item.fabric_name || null,
+                        price_group: item.price_group || null,
+                        extras: item.extras || [],
+                        notes: item.pricing_note || null,
+                        fullness: item.product_name.includes('Curtains') ? item.fabric_name : undefined
+                    }
+                }));
+
+                const { error: itemsError } = await supabase.from('quote_items').insert(items);
+                if (itemsError) {
+                    console.error("Item insertion failed:", itemsError);
+                    alert(`Quote created but failed to save items: ${itemsError.message}`);
+                    // Optional: Delete the empty quote?
+                }
+            }
+
+            // Success
+            navigate('/quotes');
+        } catch (err: any) {
+            console.error("Unexpected error saving quote:", err);
+            alert(`An unexpected error occurred: ${err.message || 'Unknown error'}`);
+        } finally {
+            setSaving(false);
+        }
     };
 
     if (loading) {
@@ -187,7 +191,18 @@ export function CreateQuoteV2() {
                         const res = addQuoteItem();
                         if (res?.error) alert(res.error);
                     }}
-                    isValid={!!selectedProductId && !liveWarning}
+                    isValid={(() => {
+                        const w = parseInt(width);
+                        const d = parseInt(drop);
+                        const config = products.find(p => p.id === selectedProductId)?.quote_config || {};
+                        const showW = config.show_width ?? true;
+                        const showD = config.show_drop ?? true;
+
+                        const hasValidDims = (!showW || w > 0) && (!showD || d > 0);
+                        const hasFabric = relevantFabrics.length === 0 || !!selectedFabricId;
+
+                        return !!selectedProductId && !liveWarning && hasValidDims && hasFabric;
+                    })()}
                     livePrice={livePrice}
                     liveWarning={liveWarning}
                     liveNote={liveNote}

@@ -64,6 +64,7 @@ function App() {
                             <Route path="/quotes/:id" element={<QuoteDetails />} />
                             <Route path="/clients" element={<ClientsList />} />
                             <Route path="/clients/new" element={<AddClient />} />
+                            <Route path="/clients/:id/edit" element={<AddClient />} />
                             <Route path="/clients/:id" element={<ClientDetails />} />
                             <Route path="/voice-notes" element={<VoiceRecorder />} />
                             <Route path="/site-photos" element={<CameraCapture />} />

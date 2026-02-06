@@ -175,6 +175,16 @@ export function useQuoteBuilder() {
         const d = parseInt(drop) || 0;
         const qty = parseInt(quantity) || 1;
 
+        // 0. check config
+        const config = selectedProduct.quote_config || {};
+        const showW = config.show_width ?? true;
+        const showD = config.show_drop ?? true;
+
+        // If dimensions are visible but 0/empty, return 0 price (don't show default min bracket)
+        if ((showW && w === 0) || (showD && d === 0)) {
+            return { livePrice: 0, liveWarning: undefined, liveNote: 'Enter dimensions' };
+        }
+
         // Base Price
         const { price, warning, note } = calculatePrice(selectedProduct, w, d, { priceGroup: selectedPriceGroup, fullness });
 
@@ -257,7 +267,9 @@ export function useQuoteBuilder() {
         const newItem: EnhancedQuoteItem = {
             id: crypto.randomUUID(),
             product_id: selectedProduct.id,
-            product_name: `${selectedProduct.supplier} - ${selectedProduct.name}`,
+            product_name: selectedProduct.supplier === selectedProduct.name || selectedProduct.name.startsWith(selectedProduct.supplier)
+                ? selectedProduct.name
+                : `${selectedProduct.supplier} - ${selectedProduct.name}`,
             width: w,
             drop: d,
             quantity: qty,
@@ -276,14 +288,13 @@ export function useQuoteBuilder() {
 
         setQuoteItems([...lineItems, newItem]);
 
-        // Reset Form
-        // We might want to keep some state, but for now reset as before
-        setSelectedProductId('');
-        setSelectedFabricId('');
+        // Reset Form - Keep Product/Fabric selections for rapid entry
+        // setSelectedProductId('');
+        // setSelectedFabricId('');
         setWidth('');
         setDrop('');
         setQuantity('1');
-        setSelectedPriceGroup(null);
+        // setSelectedPriceGroup(null);
         setSelectedExtras([]);
         // setShowExtras(false); // UI state, handle in component
         setFullness('100');
