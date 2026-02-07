@@ -178,10 +178,12 @@ export interface QuoteItemFull {
 export interface EnhancedQuoteItem extends QuoteItem {
     id: string;          // Unique UI ID
     location: string;
+    product_category: string; // Added for grouping
     cost_price: number;      // Per-unit cost (wholesale)
     margin_percent: number | null;  // Item-specific margin (null = use overall)
     sell_price: number;      // Per-unit sell = cost × (1 + margin%)
     discount_percent: number; // Trade/volume discount
     fabric_name: string;     // Selected fabric display name
+    fabric_price_group?: string; // Selected fabric price group
     notes: string;           // Item notes
 }

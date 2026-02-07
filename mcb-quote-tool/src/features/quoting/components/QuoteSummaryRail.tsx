@@ -33,18 +33,28 @@ export function QuoteSummaryRail({ items, totals, overallMargin, onUpdateMargin,
 
                 {/* Global Margin Control */}
                 <div className="flex items-center justify-between text-sm mb-2">
-                    <span className="text-slate-400">Target Margin</span>
-                    <div className="flex items-center gap-2 bg-background-input rounded-lg border border-white/10 p-1">
-                        <button
-                            onClick={() => onUpdateMargin(overallMargin - 1)}
-                            className="w-6 h-6 flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/10 rounded transition-colors"
-                        >-</button>
-                        <span className="font-mono text-brand-orange w-8 text-center font-bold">{overallMargin}%</span>
-                        <button
-                            onClick={() => onUpdateMargin(overallMargin + 1)}
-                            className="w-6 h-6 flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/10 rounded transition-colors"
-                        >+</button>
+                    <div>
+                        <span className="text-slate-400">Margin %</span>
+                        <p className="text-[10px] text-slate-600 mt-0.5">0–65</p>
                     </div>
+                    <input
+                        type="number"
+                        min={0}
+                        max={65}
+                        value={overallMargin}
+                        onChange={(e) => {
+                            const raw = e.target.value;
+                            if (raw === '') return;
+                            const v = parseInt(raw);
+                            if (!isNaN(v)) onUpdateMargin(Math.min(65, Math.max(0, v)));
+                        }}
+                        onBlur={(e) => {
+                            const v = parseInt(e.target.value);
+                            if (isNaN(v) || v < 0) onUpdateMargin(0);
+                            else if (v > 65) onUpdateMargin(65);
+                        }}
+                        className="w-20 bg-background-input border border-white/10 rounded-lg px-3 py-2 text-brand-orange font-mono font-bold text-center text-lg focus:outline-none focus:border-brand-orange focus:ring-1 focus:ring-brand-orange/30 transition-all [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                    />
                 </div>
 
                 <div className="flex justify-between items-end">

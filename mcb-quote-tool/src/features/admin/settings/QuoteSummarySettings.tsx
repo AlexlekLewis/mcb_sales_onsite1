@@ -36,6 +36,7 @@ const DEFAULT_COLUMNS: Omit<QuoteSummaryColumn, 'order'>[] = [
 const PRODUCT_CATEGORIES = [
     'External Blinds',
     'Internal Blinds',
+    'Curtains',
     'Plantation Shutters',
     'Security Doors',
 ];

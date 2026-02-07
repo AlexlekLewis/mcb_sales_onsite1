@@ -23,6 +23,7 @@ import { formatCurrency } from './margin-utils';
 import { PDFDownloadLink, pdf } from '@react-pdf/renderer';
 import { QuotePDFDocument } from './components/pdf/QuotePDFDocument';
 import { EmailQuoteModal } from './components/EmailQuoteModal';
+import { QuoteToolsPanel } from './components/QuoteToolsPanel';
 
 interface QuoteItemLegacy {
     id: string;
@@ -46,6 +47,11 @@ interface QuoteItemLegacy {
         fabric_name?: string;
         price_group?: string;
         notes?: string;
+        mount?: string;
+        material?: string;
+        control_side?: string;
+        bottom_rail?: string;
+        fitting?: string;
         [key: string]: any;
     };
     pricing_note?: string; // Legacy field
@@ -74,7 +80,7 @@ export function QuoteDetails() {
     const fetchQuote = async () => {
         if (!id) return;
 
-        console.log('Fetching quote...', id);
+
         const { data: quoteData, error: quoteError } = await supabase
             .from('quotes')
             .select('*')
@@ -82,7 +88,7 @@ export function QuoteDetails() {
             .single();
 
         if (quoteError) console.error('Error fetching quote:', quoteError);
-        console.log('Quote Data:', quoteData);
+
 
         if (quoteData) {
             setQuote({
@@ -97,7 +103,7 @@ export function QuoteDetails() {
                 .eq('quote_id', id);
 
             if (itemsError) console.error('Error fetching items:', itemsError);
-            console.log('Items Data:', itemsData);
+
 
             if (itemsData) setItems(itemsData);
         }
@@ -112,20 +118,33 @@ export function QuoteDetails() {
         if (!quote) return;
         setUpdating(true);
 
-        await supabase
-            .from('quotes')
-            .update({ status: newStatus })
-            .eq('id', quote.id);
+        try {
+            const { error } = await supabase
+                .from('quotes')
+                .update({ status: newStatus })
+                .eq('id', quote.id);
 
-        setQuote({ ...quote, status: newStatus as Quote['status'] });
-        setUpdating(false);
+            if (error) throw error;
+
+            setQuote({ ...quote, status: newStatus as Quote['status'] });
+        } catch (error) {
+            console.error('Error updating status:', error);
+            alert('Failed to update status');
+        } finally {
+            setUpdating(false);
+        }
     };
 
     const deleteQuote = async () => {
         if (!quote || !confirm('Are you sure you want to delete this quote?')) return;
 
-        await supabase.from('quotes').delete().eq('id', quote.id);
-        navigate('/quotes');
+        try {
+            await supabase.from('quotes').delete().eq('id', quote.id);
+            navigate('/quotes');
+        } catch (error) {
+            console.error('Error deleting quote:', error);
+            alert('Failed to delete quote');
+        }
     };
 
     const updateItemMargin = async (itemId: string, newMargin: number) => {
@@ -205,8 +224,6 @@ export function QuoteDetails() {
         if (showDrop) return `${item.drop}mm ${labelDrop}`;
         return '-';
     };
-
-
 
     if (loading) {
         return (
@@ -371,9 +388,6 @@ export function QuoteDetails() {
                                             const discountPercent = itemAny.discount_percent || 0;
                                             const discountAmount = item.calculated_price * (discountPercent / 100);
 
-                                            // Parse potential JSON in notes or other fields if stored that way, 
-                                            // but for now we'll assume direct access or placeholders
-
                                             return (
                                                 <tr key={item.id} className="hover:bg-white/5 transition-colors group">
                                                     <td className="p-4 text-white font-medium">
@@ -394,13 +408,12 @@ export function QuoteDetails() {
                                                         {itemAny.item_config?.fabric_name || 'Standard'}
                                                     </td>
                                                     <td className="p-4 text-slate-300 text-xs max-w-[200px]">
-                                                        {/* Placeholder for install items logic */}
-                                                        <div>Inside Mount</div>
-                                                        <div>Standard Timber</div>
+                                                        <div>{itemAny.item_config?.mount || '-'}</div>
+                                                        <div>{itemAny.item_config?.material || '-'}</div>
                                                     </td>
-                                                    <td className="p-4 text-slate-300">Left</td>
-                                                    <td className="p-4 text-slate-300">Oval</td>
-                                                    <td className="p-4 text-slate-300">Inside Mount</td>
+                                                    <td className="p-4 text-slate-300">{itemAny.item_config?.control_side || '-'}</td>
+                                                    <td className="p-4 text-slate-300">{itemAny.item_config?.bottom_rail || '-'}</td>
+                                                    <td className="p-4 text-slate-300">{itemAny.item_config?.fitting || '-'}</td>
                                                     <td className="p-4 text-slate-300 max-w-[200px] truncate" title={notes}>
                                                         {notes || '-'}
                                                     </td>
@@ -408,13 +421,6 @@ export function QuoteDetails() {
                                                         ${(item.calculated_price * 1.1).toFixed(2)}
                                                     </td>
                                                     <td className="p-4 text-center">
-                                                        <button className="p-2 hover:bg-white/10 rounded-lg text-slate-400 hover:text-white transition-colors">
-                                                            <div className="flex flex-col gap-0.5 items-center">
-                                                                <span className="w-1 h-1 bg-current rounded-full"></span>
-                                                                <span className="w-1 h-1 bg-current rounded-full"></span>
-                                                                <span className="w-1 h-1 bg-current rounded-full"></span>
-                                                            </div>
-                                                        </button>
                                                     </td>
                                                 </tr>
                                             );
@@ -426,6 +432,10 @@ export function QuoteDetails() {
                     </div>
                 )
             }
+
+            {/* In-Quote Tools Panel — Photos & Voice Notes */}
+            <QuoteToolsPanel quoteId={id!} />
+
             {/* Email Modal */}
             <EmailQuoteModal
                 isOpen={emailModalOpen}

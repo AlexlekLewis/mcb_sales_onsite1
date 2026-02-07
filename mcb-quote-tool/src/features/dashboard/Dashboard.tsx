@@ -58,8 +58,8 @@ export function Dashboard() {
 
     const quickActions = [
         { label: 'New Quote', icon: Plus, href: '/quotes/new', color: 'bg-[linear-gradient(135deg,#D97706,#F59E0B)] shadow-orange-glow text-white hover:brightness-110 border border-white/10' },
-        { label: 'Voice Notes', icon: Mic, href: '/notes', color: 'bg-background-card hover:bg-white/5 text-slate-200 border border-white/5' },
-        { label: 'Site Photos', icon: Camera, href: '/photos', color: 'bg-background-card hover:bg-white/5 text-slate-200 border border-white/5' },
+        { label: 'Voice Notes', icon: Mic, href: '/voice-notes', color: 'bg-background-card hover:bg-white/5 text-slate-200 border border-white/5' },
+        { label: 'Site Photos', icon: Camera, href: '/site-photos', color: 'bg-background-card hover:bg-white/5 text-slate-200 border border-white/5' },
     ];
 
     return (
@@ -98,16 +98,10 @@ export function Dashboard() {
                     <Link
                         key={i}
                         to={action.href}
-                        onClick={(e) => {
-                            if (action.href === '#' || action.label === 'Voice Notes' || action.label === 'Site Photos') {
-                                e.preventDefault();
-                                alert(`${action.label} is coming soon!`);
-                            }
-                        }}
-                        className={`${action.color} p-4 rounded-xl flex items-center gap-3 transition-all hover:scale-[1.02] active:scale-[0.98] shadow-glass ${['Voice Notes', 'Site Photos'].includes(action.label) ? 'opacity-60 grayscale cursor-not-allowed' : ''}`}
+                        className={`${action.color} p-4 rounded-xl flex items-center gap-3 transition-all hover:scale-[1.02] active:scale-[0.98] shadow-glass`}
                     >
                         <action.icon size={20} />
-                        <span className="font-medium">{action.label} {['Voice Notes', 'Site Photos'].includes(action.label) && <span className="ml-2 text-xs bg-white/10 px-1.5 py-0.5 rounded text-white/70">Soon</span>}</span>
+                        <span className="font-medium">{action.label}</span>
                     </Link>
                 ))}
             </div>

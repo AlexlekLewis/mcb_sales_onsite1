@@ -166,7 +166,7 @@ export function ProductList() {
                 keyField="id"
                 isLoading={loading}
                 onEdit={(item) => navigate(`/admin/products/${item.id}`)}
-                onDelete={(item) => console.log('Delete', item)}
+                onDelete={() => { /* TODO: implement delete confirmation */ }}
             />
 
             <ProductPricingExplainer

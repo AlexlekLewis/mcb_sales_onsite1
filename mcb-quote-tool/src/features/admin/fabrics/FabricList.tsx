@@ -104,7 +104,7 @@ export function FabricList() {
                 keyField="id"
                 isLoading={loading}
                 onEdit={(item) => navigate(`/admin/fabrics/${item.id}`)}
-                onDelete={(item) => console.log('Delete', item)}
+                onDelete={() => { /* TODO: implement delete confirmation */ }}
             />
         </div>
     );

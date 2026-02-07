@@ -85,8 +85,8 @@ export function ExtrasList() {
                 columns={columns}
                 keyField="id"
                 isLoading={loading}
-                onEdit={(item) => console.log('Edit', item)}
-                onDelete={(item) => console.log('Delete', item)}
+                onEdit={() => { /* TODO: implement edit modal */ }}
+                onDelete={() => { /* TODO: implement delete confirmation */ }}
             />
         </div>
     );
