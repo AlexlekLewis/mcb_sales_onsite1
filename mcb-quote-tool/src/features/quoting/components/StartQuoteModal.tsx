@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '../../../lib/supabase';
-import { Search, User, MapPin, FileText, ArrowRight, Loader2, Plus, X, Check } from 'lucide-react';
+import { Search, User, MapPin, FileText, ArrowRight, Loader2, Plus, X, Check, Phone, Mail } from 'lucide-react';
 import { cn } from '../../../lib/utils';
 
 interface StartQuoteModalProps {
@@ -28,6 +28,8 @@ export function StartQuoteModal({ onStart, onCancel }: StartQuoteModalProps) {
     const [customerName, setCustomerName] = useState('');
     const [siteAddress, setSiteAddress] = useState('');
     const [notes, setNotes] = useState('');
+    const [customerEmail, setCustomerEmail] = useState('');
+    const [customerPhone, setCustomerPhone] = useState('');
     const [creating, setCreating] = useState(false);
 
     // Client search
@@ -134,11 +136,13 @@ export function StartQuoteModal({ onStart, onCancel }: StartQuoteModalProps) {
         setSearchQuery(customer.name);
         setShowDropdown(false);
 
-        // Auto-fill site address from customer if available
+        // Auto-fill fields from customer if available
         const addr = [customer.address_line1, customer.suburb, customer.state, customer.postcode]
             .filter(Boolean)
             .join(', ');
         if (addr && !siteAddress) setSiteAddress(addr);
+        if (customer.email && !customerEmail) setCustomerEmail(customer.email);
+        if (customer.phone && !customerPhone) setCustomerPhone(customer.phone);
     };
 
     const handleStart = async () => {
@@ -156,6 +160,8 @@ export function StartQuoteModal({ onStart, onCancel }: StartQuoteModalProps) {
             };
             if (selectedCustomerId) quoteRecord.customer_id = selectedCustomerId;
             if (siteAddress.trim()) quoteRecord.site_address = siteAddress.trim();
+            if (customerEmail.trim()) quoteRecord.customer_email = customerEmail.trim();
+            if (customerPhone.trim()) quoteRecord.customer_phone = customerPhone.trim();
             if (notes.trim()) quoteRecord.notes = notes.trim();
 
             const { data: quote, error } = await supabase
@@ -263,6 +269,36 @@ export function StartQuoteModal({ onStart, onCancel }: StartQuoteModalProps) {
                             placeholder="123 Main St, Richmond VIC 3121"
                             className="w-full bg-[#1c1c24] border border-white/10 rounded-xl px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:border-brand-orange transition-colors"
                         />
+                    </div>
+
+                    {/* Email & Mobile — side by side */}
+                    <div className="grid grid-cols-2 gap-3">
+                        <div>
+                            <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
+                                <Mail size={12} className="inline mr-1" />
+                                Email
+                            </label>
+                            <input
+                                type="email"
+                                value={customerEmail}
+                                onChange={(e) => setCustomerEmail(e.target.value)}
+                                placeholder="client@email.com"
+                                className="w-full bg-[#1c1c24] border border-white/10 rounded-xl px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:border-brand-orange transition-colors text-sm"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
+                                <Phone size={12} className="inline mr-1" />
+                                Mobile
+                            </label>
+                            <input
+                                type="tel"
+                                value={customerPhone}
+                                onChange={(e) => setCustomerPhone(e.target.value)}
+                                placeholder="0412 345 678"
+                                className="w-full bg-[#1c1c24] border border-white/10 rounded-xl px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:border-brand-orange transition-colors text-sm"
+                            />
+                        </div>
                     </div>
 
                     {/* Notes */}
