@@ -46,9 +46,12 @@ export function QuoteToolsPanel({ quoteId }: QuoteToolsPanelProps) {
     };
 
     return (
-        <div className="mt-8 bg-background-card rounded-2xl border border-white/5 overflow-hidden">
+        <div className={cn(
+            "bg-background-card rounded-2xl border overflow-hidden transition-all",
+            isExpanded ? "border-brand-orange/20" : "border-white/5"
+        )}>
             {/* Toolbar — always visible */}
-            <div className="flex items-center border-b border-white/5">
+            <div className={cn("flex items-center", isExpanded ? "border-b border-white/5" : "")}>
                 <button
                     onClick={() => toggleTab('photos')}
                     className={cn(
@@ -109,6 +112,15 @@ export function QuoteToolsPanel({ quoteId }: QuoteToolsPanelProps) {
                     {activeTab === 'voice' && (
                         <VoiceRecorder quoteId={quoteId} compact />
                     )}
+
+                    {/* Collapse bar */}
+                    <button
+                        onClick={() => setActiveTab(null)}
+                        className="w-full mt-3 py-2 text-xs text-slate-500 hover:text-white flex items-center justify-center gap-1.5 rounded-lg hover:bg-white/5 transition-colors"
+                    >
+                        <ChevronUp size={14} />
+                        Collapse
+                    </button>
                 </div>
             )}
         </div>
