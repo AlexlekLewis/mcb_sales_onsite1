@@ -71,6 +71,8 @@ export interface QuoteConfig {
     show_fullness?: boolean;
     label_width?: string;
     label_drop?: string;
+    promoted_extras?: string[];  // IDs of extras shown inline in main configurator (Zone 1)
+    enabled_extras?: string[];   // IDs of extras shown in accordion section (Zone 2)
 }
 
 export interface Fabric {

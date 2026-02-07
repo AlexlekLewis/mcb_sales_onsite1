@@ -165,6 +165,33 @@ export function useQuoteBuilder() {
         })
         : [], [selectedProduct, extras]);
 
+    // Split extras into two zones based on admin config
+    const promotedExtras = useMemo(() => {
+        const config = selectedProduct?.quote_config;
+        const promotedIds = config?.promoted_extras;
+        if (!promotedIds || promotedIds.length === 0) return [];
+        return relevantExtras.filter(e => promotedIds.includes(e.id));
+    }, [selectedProduct, relevantExtras]);
+
+    const accordionExtras = useMemo(() => {
+        const config = selectedProduct?.quote_config;
+        const promotedIds = config?.promoted_extras;
+        const enabledIds = config?.enabled_extras;
+
+        // If admin has configured enabled_extras, use that list
+        if (enabledIds && enabledIds.length > 0) {
+            return relevantExtras.filter(e => enabledIds.includes(e.id));
+        }
+
+        // If only promoted is set, everything NOT promoted goes to accordion
+        if (promotedIds && promotedIds.length > 0) {
+            return relevantExtras.filter(e => !promotedIds.includes(e.id));
+        }
+
+        // Fallback: all relevant extras go to accordion (current behavior)
+        return relevantExtras;
+    }, [selectedProduct, relevantExtras]);
+
 
     // --- Live Pricing Calculation ---
     // This ensures we always have a current price for the UI and validation
@@ -376,6 +403,8 @@ export function useQuoteBuilder() {
             relevantFabrics,
             relevantPriceGroups,
             relevantExtras,
+            promotedExtras,
+            accordionExtras,
             selectedProduct,
         },
         loading,

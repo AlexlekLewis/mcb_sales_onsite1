@@ -23,6 +23,8 @@ interface ProductConfiguratorProps {
     onSelectedPriceGroupChange: (group: PriceGroup | null) => void; // Fixed signature
 
     extras: ProductExtra[];
+    promotedExtras?: ProductExtra[];
+    accordionExtras?: ProductExtra[];
     selectedExtras: SelectedExtra[];
     onToggleExtra: (extra: ProductExtra) => void;
 
@@ -47,7 +49,7 @@ export function ProductConfigurator({
     products, selectedProductId, onProductChange,
     fabrics, selectedFabricId, onFabricChange,
     priceGroups, selectedPriceGroup, onSelectedPriceGroupChange,
-    extras, selectedExtras, onToggleExtra,
+    extras, promotedExtras = [], accordionExtras, selectedExtras, onToggleExtra,
     formState, onFormChange,
     onAdd, isValid, livePrice, liveWarning, liveNote,
     addRangeButton
@@ -68,15 +70,18 @@ export function ProductConfigurator({
     const isProductSelected = !!selectedProductId;
 
     // Group Extras
+    // Use accordionExtras if provided, otherwise fall back to all extras
+    const extrasForAccordion = accordionExtras ?? extras;
+
     const groupedExtras = React.useMemo(() => {
         const groups: Record<string, ProductExtra[]> = {};
-        extras.forEach(extra => {
-            const cat = extra.extra_category || 'General Accesssories';
+        extrasForAccordion.forEach(extra => {
+            const cat = extra.extra_category || 'General Accessories';
             if (!groups[cat]) groups[cat] = [];
             groups[cat].push(extra);
         });
         return groups;
-    }, [extras]);
+    }, [extrasForAccordion]);
 
     const toggleCategory = (cat: string) => {
         const next = new Set(expandedCategories);
@@ -274,6 +279,36 @@ export function ProductConfigurator({
                                     )}
                                 </div>
                             </div>
+
+                            {/* 3.5 Promoted Extras — Always Visible (Zone 1) */}
+                            {promotedExtras.length > 0 && (
+                                <div className="space-y-2">
+                                    <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Options</h3>
+                                    <div className="grid grid-cols-3 gap-1.5">
+                                        {promotedExtras.map(extra => {
+                                            const isSelected = selectedExtras.some(e => e.id === extra.id);
+                                            return (
+                                                <button
+                                                    key={extra.id}
+                                                    onClick={() => onToggleExtra(extra)}
+                                                    className={cn(
+                                                        "flex items-center gap-2 p-2 rounded-lg text-left border transition-all group",
+                                                        isSelected
+                                                            ? "bg-brand-orange/10 border-brand-orange/50"
+                                                            : "bg-background-input border-white/5 hover:border-white/20"
+                                                    )}
+                                                >
+                                                    <div className={cn("w-3.5 h-3.5 rounded border flex-shrink-0 flex items-center justify-center transition-colors", isSelected ? "bg-brand-orange border-brand-orange" : "border-slate-600 group-hover:border-slate-400")}>
+                                                        {isSelected && <Check size={8} className="text-white" />}
+                                                    </div>
+                                                    <span className={cn("text-[11px] font-medium truncate", isSelected ? "text-white" : "text-slate-300")}>{extra.name}</span>
+                                                    <span className="text-[10px] text-slate-500 font-mono ml-auto flex-shrink-0">${extra.price}</span>
+                                                </button>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            )}
 
                             {/* 4. Extras Accordions (Grouped) */}
                             {Object.keys(groupedExtras).length > 0 && (

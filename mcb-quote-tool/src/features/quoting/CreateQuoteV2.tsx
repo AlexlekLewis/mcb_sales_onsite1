@@ -12,7 +12,7 @@ import { StartQuoteModal } from './components/StartQuoteModal';
 export function CreateQuoteV2() {
     const navigate = useNavigate();
     const {
-        data: { products, tabs, tabProducts, relevantFabrics, relevantPriceGroups, relevantExtras },
+        data: { products, tabs, tabProducts, relevantFabrics, relevantPriceGroups, relevantExtras, promotedExtras, accordionExtras },
         quote: { customerName, setCustomerName, lineItems, overallMargin, setOverallMargin, showGst, totals, livePrice, liveWarning, liveNote },
         form: {
             activeTab, setActiveTab,
@@ -277,6 +277,8 @@ export function CreateQuoteV2() {
                         onSelectedPriceGroupChange={setSelectedPriceGroup}
 
                         extras={relevantExtras}
+                        promotedExtras={promotedExtras}
+                        accordionExtras={accordionExtras}
                         selectedExtras={selectedExtras}
                         onToggleExtra={toggleExtra}
 

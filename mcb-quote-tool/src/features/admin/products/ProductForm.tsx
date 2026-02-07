@@ -1,12 +1,15 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { supabase } from '../../../lib/supabase';
-import { Product } from '../../quoting/types';
-import { ArrowLeft, Save, Loader2, Trash2 } from 'lucide-react';
+import { Product, ProductExtra } from '../../quoting/types';
+import { ArrowLeft, Save, Loader2, Trash2, Star, ChevronDown, ChevronUp, Eye, EyeOff } from 'lucide-react';
 import { PRODUCT_CATEGORIES, PRICING_TYPES } from '../../../lib/constants';
+import { cn } from '../../../lib/utils';
 
 import { getPricingDataSchema } from '../../../lib/schemas';
 import { ZodError } from 'zod';
+
+type ExtraZone = 'promoted' | 'accordion' | 'hidden';
 
 export function ProductForm() {
     const { id } = useParams();
@@ -26,11 +29,16 @@ export function ProductForm() {
     const [jsonError, setJsonError] = useState<string | null>(null);
     const [jsonString, setJsonString] = useState('{}');
 
+    // --- Extras Picker State ---
+    const [availableExtras, setAvailableExtras] = useState<ProductExtra[]>([]);
+    const [extraZones, setExtraZones] = useState<Record<string, ExtraZone>>({});
+    const [expandedPickerCategories, setExpandedPickerCategories] = useState<Set<string>>(new Set());
+    const [extrasLoading, setExtrasLoading] = useState(false);
+
     useEffect(() => {
         if (id) {
             fetchProduct(id);
         } else {
-            // Reset form for New Product
             setFormData({
                 name: '',
                 category: '',
@@ -50,6 +58,52 @@ export function ProductForm() {
             setLoading(false);
         }
     }, [id]);
+
+    // Fetch extras when product supplier+category changes
+    useEffect(() => {
+        const sup = formData.supplier;
+        const cat = formData.category;
+        if (!sup || !cat) {
+            setAvailableExtras([]);
+            return;
+        }
+
+        const fetchExtras = async () => {
+            setExtrasLoading(true);
+            const { data } = await supabase
+                .from('product_extras')
+                .select('*')
+                .eq('supplier', sup)
+                .eq('product_category', cat)
+                .eq('is_active', true)
+                .order('extra_category, name');
+
+            const extras = (data || []) as ProductExtra[];
+            setAvailableExtras(extras);
+
+            // Initialize zones from existing quote_config
+            const config = formData.quote_config || {};
+            const promoted = new Set(config.promoted_extras || []);
+            const enabled = new Set(config.enabled_extras || []);
+
+            const zones: Record<string, ExtraZone> = {};
+            extras.forEach(e => {
+                if (promoted.has(e.id)) {
+                    zones[e.id] = 'promoted';
+                } else if (enabled.has(e.id)) {
+                    zones[e.id] = 'accordion';
+                } else if (promoted.size > 0 || enabled.size > 0) {
+                    zones[e.id] = 'hidden';
+                } else {
+                    zones[e.id] = 'accordion';
+                }
+            });
+            setExtraZones(zones);
+            setExtrasLoading(false);
+        };
+
+        fetchExtras();
+    }, [formData.supplier, formData.category]);
 
     const fetchProduct = async (productId: string) => {
         const { data, error } = await supabase
@@ -81,6 +135,50 @@ export function ProductForm() {
         }
     };
 
+    // Group extras by category for the picker
+    const groupedAvailableExtras = useMemo(() => {
+        const groups: Record<string, ProductExtra[]> = {};
+        availableExtras.forEach(e => {
+            const cat = e.extra_category || 'General';
+            if (!groups[cat]) groups[cat] = [];
+            groups[cat].push(e);
+        });
+        return groups;
+    }, [availableExtras]);
+
+    const setExtraZone = (extraId: string, zone: ExtraZone) => {
+        setExtraZones(prev => ({ ...prev, [extraId]: zone }));
+    };
+
+    const setCategoryZone = (category: string, zone: ExtraZone) => {
+        const items = groupedAvailableExtras[category] || [];
+        setExtraZones(prev => {
+            const next = { ...prev };
+            items.forEach(e => { next[e.id] = zone; });
+            return next;
+        });
+    };
+
+    const togglePickerCategory = (cat: string) => {
+        setExpandedPickerCategories(prev => {
+            const next = new Set(prev);
+            if (next.has(cat)) next.delete(cat);
+            else next.add(cat);
+            return next;
+        });
+    };
+
+    // Counts for summary
+    const zoneCounts = useMemo(() => {
+        let promoted = 0, accordion = 0, hidden = 0;
+        Object.values(extraZones).forEach(z => {
+            if (z === 'promoted') promoted++;
+            else if (z === 'accordion') accordion++;
+            else hidden++;
+        });
+        return { promoted, accordion, hidden, total: availableExtras.length };
+    }, [extraZones, availableExtras]);
+
     const handleSave = async () => {
         if (jsonError) {
             alert('Please fix JSON errors before saving');
@@ -92,11 +190,8 @@ export function ProductForm() {
 
         try {
             parsedData = JSON.parse(jsonString);
-
-            // Validate against Zod Schema
             const schema = getPricingDataSchema(formData.pricing_type || 'grid');
             schema.parse(parsedData);
-
         } catch (err) {
             setSaving(false);
             if (err instanceof ZodError) {
@@ -111,9 +206,22 @@ export function ProductForm() {
             return;
         }
 
+        // Build promoted_extras and enabled_extras from zone assignments
+        const promotedIds: string[] = [];
+        const enabledIds: string[] = [];
+        Object.entries(extraZones).forEach(([extraId, zone]) => {
+            if (zone === 'promoted') promotedIds.push(extraId);
+            else if (zone === 'accordion') enabledIds.push(extraId);
+        });
+
         const productData = {
             ...formData,
-            pricing_data: parsedData
+            pricing_data: parsedData,
+            quote_config: {
+                ...formData.quote_config,
+                promoted_extras: promotedIds,
+                enabled_extras: enabledIds,
+            }
         };
 
         let error;
@@ -330,19 +438,6 @@ export function ProductForm() {
                             <label className="flex items-center gap-3 p-3 rounded-xl bg-white/5 border border-white/5 cursor-pointer hover:bg-white/10 transition-colors">
                                 <input
                                     type="checkbox"
-                                    checked={formData.quote_config?.show_extras ?? true}
-                                    onChange={e => setFormData(prev => ({
-                                        ...prev,
-                                        quote_config: { ...prev.quote_config, show_extras: e.target.checked }
-                                    }))}
-                                    className="w-5 h-5 rounded border-gray-600 text-indigo-600 focus:ring-indigo-500 bg-[#1c1c24]"
-                                />
-                                <span className="text-white">Show Extras</span>
-                            </label>
-
-                            <label className="flex items-center gap-3 p-3 rounded-xl bg-white/5 border border-white/5 cursor-pointer hover:bg-white/10 transition-colors">
-                                <input
-                                    type="checkbox"
                                     checked={formData.quote_config?.show_fullness ?? false}
                                     onChange={e => setFormData(prev => ({
                                         ...prev,
@@ -382,6 +477,176 @@ export function ProductForm() {
                         </div>
                     </div>
                 </div>
+
+                {/* ─── Two-Zone Extras Picker ─── */}
+                {availableExtras.length > 0 && (
+                    <div className="pt-6 border-t border-white/5">
+                        <div className="flex items-center justify-between mb-4">
+                            <div>
+                                <h3 className="text-lg font-semibold text-white">Extras Layout</h3>
+                                <p className="text-sm text-slate-400 mt-1">
+                                    Control where each extra appears in the quote configurator
+                                </p>
+                            </div>
+                            <div className="flex items-center gap-3 text-xs">
+                                <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-500/10 text-amber-400 font-medium">
+                                    <Star size={12} />
+                                    {zoneCounts.promoted} Promoted
+                                </span>
+                                <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-blue-500/10 text-blue-400 font-medium">
+                                    <Eye size={12} />
+                                    {zoneCounts.accordion} Accordion
+                                </span>
+                                <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-500/10 text-slate-400 font-medium">
+                                    <EyeOff size={12} />
+                                    {zoneCounts.hidden} Hidden
+                                </span>
+                            </div>
+                        </div>
+
+                        {/* Zone Legend */}
+                        <div className="grid grid-cols-3 gap-3 mb-4 p-3 rounded-xl bg-white/[0.02] border border-white/5">
+                            <div className="text-center">
+                                <div className="flex items-center justify-center gap-1.5 text-amber-400 font-semibold text-xs mb-1">
+                                    <Star size={12} />
+                                    Promoted
+                                </div>
+                                <p className="text-[10px] text-slate-500">Always visible in configurator</p>
+                            </div>
+                            <div className="text-center">
+                                <div className="flex items-center justify-center gap-1.5 text-blue-400 font-semibold text-xs mb-1">
+                                    <Eye size={12} />
+                                    Accordion
+                                </div>
+                                <p className="text-[10px] text-slate-500">In collapsed extras section</p>
+                            </div>
+                            <div className="text-center">
+                                <div className="flex items-center justify-center gap-1.5 text-slate-500 font-semibold text-xs mb-1">
+                                    <EyeOff size={12} />
+                                    Hidden
+                                </div>
+                                <p className="text-[10px] text-slate-500">Not shown to sales reps</p>
+                            </div>
+                        </div>
+
+                        {extrasLoading ? (
+                            <div className="flex items-center justify-center py-8 text-slate-400">
+                                <Loader2 className="animate-spin mr-2" size={18} />
+                                Loading extras...
+                            </div>
+                        ) : (
+                            <div className="space-y-2">
+                                {Object.entries(groupedAvailableExtras).map(([category, items]) => {
+                                    const isExpanded = expandedPickerCategories.has(category);
+                                    const catPromoted = items.filter(i => extraZones[i.id] === 'promoted').length;
+                                    const catAccordion = items.filter(i => extraZones[i.id] === 'accordion').length;
+
+                                    return (
+                                        <div key={category} className="border border-white/5 rounded-xl bg-[#1c1c24] overflow-hidden">
+                                            <button
+                                                onClick={() => togglePickerCategory(category)}
+                                                className="w-full flex items-center justify-between px-4 py-3 text-left hover:bg-white/5 transition-colors"
+                                            >
+                                                <div className="flex items-center gap-3">
+                                                    <span className="font-medium text-sm text-white">{category}</span>
+                                                    <span className="text-xs text-slate-500">({items.length})</span>
+                                                </div>
+                                                <div className="flex items-center gap-2">
+                                                    {catPromoted > 0 && (
+                                                        <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-amber-500/20 text-amber-400 font-semibold">{catPromoted}</span>
+                                                    )}
+                                                    {catAccordion > 0 && (
+                                                        <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-blue-500/20 text-blue-400 font-semibold">{catAccordion}</span>
+                                                    )}
+                                                    {isExpanded ? <ChevronUp size={14} className="text-slate-400" /> : <ChevronDown size={14} className="text-slate-400" />}
+                                                </div>
+                                            </button>
+
+                                            {isExpanded && (
+                                                <div className="px-4 pb-3 border-t border-white/5">
+                                                    {/* Bulk Actions */}
+                                                    <div className="flex gap-2 py-2 mb-2 border-b border-white/5">
+                                                        <button
+                                                            onClick={() => setCategoryZone(category, 'promoted')}
+                                                            className="text-[10px] px-2 py-1 rounded-md bg-amber-500/10 text-amber-400 hover:bg-amber-500/20 transition-colors font-medium"
+                                                        >
+                                                            All → Promoted
+                                                        </button>
+                                                        <button
+                                                            onClick={() => setCategoryZone(category, 'accordion')}
+                                                            className="text-[10px] px-2 py-1 rounded-md bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 transition-colors font-medium"
+                                                        >
+                                                            All → Accordion
+                                                        </button>
+                                                        <button
+                                                            onClick={() => setCategoryZone(category, 'hidden')}
+                                                            className="text-[10px] px-2 py-1 rounded-md bg-slate-500/10 text-slate-400 hover:bg-slate-500/20 transition-colors font-medium"
+                                                        >
+                                                            All → Hidden
+                                                        </button>
+                                                    </div>
+
+                                                    {/* Individual Extras */}
+                                                    <div className="space-y-1">
+                                                        {items.map(extra => {
+                                                            const zone = extraZones[extra.id] || 'accordion';
+                                                            return (
+                                                                <div key={extra.id} className="flex items-center justify-between py-1.5 px-2 rounded-lg hover:bg-white/[0.03] transition-colors group">
+                                                                    <div className="flex items-center gap-2 min-w-0 flex-1">
+                                                                        <span className="text-sm text-slate-300 truncate">{extra.name}</span>
+                                                                        <span className="text-[10px] text-slate-600 font-mono flex-shrink-0">${extra.price}</span>
+                                                                    </div>
+                                                                    <div className="flex items-center gap-1 flex-shrink-0 ml-3">
+                                                                        <button
+                                                                            onClick={() => setExtraZone(extra.id, 'promoted')}
+                                                                            title="Promoted — always visible"
+                                                                            className={cn(
+                                                                                "w-7 h-7 rounded-lg flex items-center justify-center transition-all",
+                                                                                zone === 'promoted'
+                                                                                    ? "bg-amber-500/20 text-amber-400"
+                                                                                    : "text-slate-600 hover:text-amber-400 hover:bg-amber-500/10"
+                                                                            )}
+                                                                        >
+                                                                            <Star size={13} />
+                                                                        </button>
+                                                                        <button
+                                                                            onClick={() => setExtraZone(extra.id, 'accordion')}
+                                                                            title="Accordion — collapsed section"
+                                                                            className={cn(
+                                                                                "w-7 h-7 rounded-lg flex items-center justify-center transition-all",
+                                                                                zone === 'accordion'
+                                                                                    ? "bg-blue-500/20 text-blue-400"
+                                                                                    : "text-slate-600 hover:text-blue-400 hover:bg-blue-500/10"
+                                                                            )}
+                                                                        >
+                                                                            <Eye size={13} />
+                                                                        </button>
+                                                                        <button
+                                                                            onClick={() => setExtraZone(extra.id, 'hidden')}
+                                                                            title="Hidden — not shown"
+                                                                            className={cn(
+                                                                                "w-7 h-7 rounded-lg flex items-center justify-center transition-all",
+                                                                                zone === 'hidden'
+                                                                                    ? "bg-slate-500/20 text-slate-400"
+                                                                                    : "text-slate-600 hover:text-slate-400 hover:bg-slate-500/10"
+                                                                            )}
+                                                                        >
+                                                                            <EyeOff size={13} />
+                                                                        </button>
+                                                                    </div>
+                                                                </div>
+                                                            );
+                                                        })}
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        )}
+                    </div>
+                )}
 
             </div>
 
