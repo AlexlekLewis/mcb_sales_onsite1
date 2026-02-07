@@ -56,7 +56,7 @@ export function ProductConfigurator({
     const selectedProduct = products.find(p => p.id === selectedProductId);
 
     // State for expanded extra categories
-    const [expandedCategories, setExpandedCategories] = React.useState<Set<string>>(new Set(['General', 'Motorisation']));
+    const [expandedCategories, setExpandedCategories] = React.useState<Set<string>>(new Set());
 
     // Helper determines visibility
     const quoteConfig = selectedProduct?.quote_config || {};
