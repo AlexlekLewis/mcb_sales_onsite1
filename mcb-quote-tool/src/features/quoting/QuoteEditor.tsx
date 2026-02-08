@@ -17,7 +17,8 @@ import {
     ChevronDown,
     ChevronUp,
     Eye,
-    EyeOff
+    EyeOff,
+    Ruler
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 
@@ -177,6 +178,8 @@ export function QuoteEditor({ quoteId, onSave, readOnly = false }: QuoteEditorPr
         for (const item of items) {
             await supabase.from('quote_items').update({
                 location: item.location,
+                width: item.width,
+                drop: item.drop,
                 cost_price: item.cost_price,
                 item_margin_percent: item.item_margin_percent,
                 sell_price: item.sell_price,
@@ -333,8 +336,12 @@ export function QuoteEditor({ quoteId, onSave, readOnly = false }: QuoteEditorPr
                             <th className="text-left px-4 py-3 text-xs font-semibold text-slate-400 uppercase w-8">#</th>
                             <th className="text-left px-4 py-3 text-xs font-semibold text-slate-400 uppercase">Location</th>
                             <th className="text-left px-4 py-3 text-xs font-semibold text-slate-400 uppercase">Product</th>
-                            <th className="text-left px-4 py-3 text-xs font-semibold text-slate-400 uppercase">Size</th>
+                            <th className="text-center px-4 py-3 text-xs font-semibold text-slate-400 uppercase w-20">Width</th>
+                            <th className="text-center px-4 py-3 text-xs font-semibold text-slate-400 uppercase w-20">Drop</th>
                             <th className="text-center px-4 py-3 text-xs font-semibold text-slate-400 uppercase w-16">Qty</th>
+                            <th className="text-right px-4 py-3 text-xs font-semibold text-slate-400 uppercase">Product $</th>
+                            <th className="text-right px-4 py-3 text-xs font-semibold text-slate-400 uppercase">Extras $</th>
+                            <th className="text-right px-4 py-3 text-xs font-semibold text-slate-400 uppercase">Install $</th>
                             <th className="text-right px-4 py-3 text-xs font-semibold text-slate-400 uppercase">Cost</th>
                             <th className="text-center px-4 py-3 text-xs font-semibold text-slate-400 uppercase w-24">Margin</th>
                             <th className="text-right px-4 py-3 text-xs font-semibold text-slate-400 uppercase">Sell</th>
@@ -344,7 +351,7 @@ export function QuoteEditor({ quoteId, onSave, readOnly = false }: QuoteEditorPr
                     <tbody>
                         {items.length === 0 ? (
                             <tr>
-                                <td colSpan={readOnly ? 8 : 9} className="px-4 py-8 text-center text-slate-400">
+                                <td colSpan={readOnly ? 12 : 13} className="px-4 py-8 text-center text-slate-400">
                                     No items in this quote
                                 </td>
                             </tr>
@@ -356,6 +363,20 @@ export function QuoteEditor({ quoteId, onSave, readOnly = false }: QuoteEditorPr
                                 const lineSell = applySingleMargin(item.cost_price, effectiveMargin);
                                 const lineTotal = lineSell * item.quantity;
                                 const displayTotal = showGst ? lineTotal * 1.1 : lineTotal;
+
+                                // Separate extras into components vs installation
+                                const allExtras = item.item_config?.extras || [];
+                                const isInstallExtra = (e: any) =>
+                                    e.extra_category?.toLowerCase() === 'installation' ||
+                                    (!e.extra_category && e.name?.toLowerCase().includes('install'));
+                                const installTotal = allExtras.filter(isInstallExtra).reduce((sum: number, e: any) => sum + (e.calculated_price || 0), 0);
+                                const componentTotal = allExtras.filter((e: any) => !isInstallExtra(e)).reduce((sum: number, e: any) => sum + (e.calculated_price || 0), 0);
+                                const extrasTotal = installTotal + componentTotal;
+                                const productPrice = item.cost_price - extrasTotal;
+
+                                const config = item.products?.quote_config;
+                                const showWidth = config?.show_width ?? true;
+                                const showDrop = config?.show_drop ?? true;
 
                                 return (
                                     <tr key={item.id} className="border-b border-white/5 hover:bg-white/5 transition-colors">
@@ -388,7 +409,36 @@ export function QuoteEditor({ quoteId, onSave, readOnly = false }: QuoteEditorPr
                                                 )}
                                             </div>
                                         </td>
-                                        <td className="px-4 py-3 text-slate-300 text-sm">{formatSize(item)}</td>
+                                        {/* Editable Width */}
+                                        <td className="px-4 py-3 text-center">
+                                            {showWidth ? (
+                                                <input
+                                                    type="number"
+                                                    min="0"
+                                                    value={item.width || ''}
+                                                    onChange={(e) => updateItem(index, 'width', parseInt(e.target.value) || 0)}
+                                                    disabled={readOnly}
+                                                    className="w-16 bg-[#1c1c24] border border-white/10 rounded px-2 py-1 text-white text-sm text-center"
+                                                />
+                                            ) : (
+                                                <span className="text-slate-500 text-sm">—</span>
+                                            )}
+                                        </td>
+                                        {/* Editable Drop */}
+                                        <td className="px-4 py-3 text-center">
+                                            {showDrop ? (
+                                                <input
+                                                    type="number"
+                                                    min="0"
+                                                    value={item.drop || ''}
+                                                    onChange={(e) => updateItem(index, 'drop', parseInt(e.target.value) || 0)}
+                                                    disabled={readOnly}
+                                                    className="w-16 bg-[#1c1c24] border border-white/10 rounded px-2 py-1 text-white text-sm text-center"
+                                                />
+                                            ) : (
+                                                <span className="text-slate-500 text-sm">—</span>
+                                            )}
+                                        </td>
                                         <td className="px-4 py-3 text-center">
                                             <input
                                                 type="number"
@@ -399,6 +449,27 @@ export function QuoteEditor({ quoteId, onSave, readOnly = false }: QuoteEditorPr
                                                 className="w-12 bg-[#1c1c24] border border-white/10 rounded px-2 py-1 text-white text-sm text-center"
                                             />
                                         </td>
+                                        {/* Product Price (base without extras) */}
+                                        <td className="px-4 py-3 text-right text-slate-300 text-sm">
+                                            {formatCurrency(productPrice)}
+                                        </td>
+                                        {/* Component Extras (non-installation) */}
+                                        <td className="px-4 py-3 text-right text-sm">
+                                            {componentTotal > 0 ? (
+                                                <span className="text-blue-400">{formatCurrency(componentTotal)}</span>
+                                            ) : (
+                                                <span className="text-slate-500">—</span>
+                                            )}
+                                        </td>
+                                        {/* Installation only */}
+                                        <td className="px-4 py-3 text-right text-sm">
+                                            {installTotal > 0 ? (
+                                                <span className="text-brand-orange">{formatCurrency(installTotal)}</span>
+                                            ) : (
+                                                <span className="text-slate-500">—</span>
+                                            )}
+                                        </td>
+                                        {/* Total Cost (product + extras) */}
                                         <td className="px-4 py-3 text-right text-slate-300 text-sm">
                                             {formatCurrency(item.cost_price)}
                                         </td>

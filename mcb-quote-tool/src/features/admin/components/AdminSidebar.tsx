@@ -11,7 +11,8 @@ import {
     Table,
     Shield,
     Hammer,
-    Percent
+    Percent,
+    PanelTop
 } from 'lucide-react';
 
 const AdminNavItem = ({ to, icon: Icon, label, end = false, className }: { to: string, icon: any, label: string, end?: boolean, className?: string }) => (
@@ -66,7 +67,8 @@ export function AdminSidebar() {
 
                 <AdminNavItem to="/admin/products?category=Internal%20Blinds" icon={Blinds} label="Internal Blinds" />
                 <AdminNavItem to="/admin/products?category=Curtains" icon={FoldVertical} label="Curtains" />
-                <AdminNavItem to="/admin/products?category=Plantation%20Shutters" icon={Table} label="Shutters" />
+                <AdminNavItem to="/admin/products?category=Plantation%20Shutters" icon={Table} label="Plantation Shutters" />
+                <AdminNavItem to="/admin/products?category=Roller%20Shutters" icon={PanelTop} label="Roller Shutters" />
                 <AdminNavItem to="/admin/products?category=External%20Blinds" icon={Sun} label="External Blinds" />
                 <AdminNavItem to="/admin/products?category=Security%20Doors" icon={Shield} label="Security Doors" />
 

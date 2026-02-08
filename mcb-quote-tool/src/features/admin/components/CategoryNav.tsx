@@ -7,10 +7,19 @@ interface CategoryNavProps {
 }
 
 export function CategoryNav({ category }: CategoryNavProps) {
-    // If no category is selected, we don't show the nav (or showed simplified one)
+    const [searchParams] = useSearchParams();
+    const supplierParam = searchParams.get('supplier');
+
+    // If no category is selected, we don't show the nav
     if (!category) return null;
 
-    const getLink = (path: string) => `${path}?category=${encodeURIComponent(category)}`;
+    const getLink = (path: string) => {
+        let url = `${path}?category=${encodeURIComponent(category)}`;
+        if (supplierParam) {
+            url += `&supplier=${encodeURIComponent(supplierParam)}`;
+        }
+        return url;
+    };
 
     return (
         <div className="flex items-center gap-2 mb-6 bg-background-card p-1.5 rounded-xl w-fit border border-white/5">

@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { ArrowLeft, Loader2, Save, Plus } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { useQuoteBuilder } from './hooks/useQuoteBuilder';
@@ -11,6 +11,8 @@ import { StartQuoteModal } from './components/StartQuoteModal';
 
 export function CreateQuoteV2() {
     const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
+    const existingQuoteId = searchParams.get('quoteId');
     const {
         data: { products, tabs, tabProducts, relevantFabrics, relevantPriceGroups, relevantExtras, promotedExtras, accordionExtras },
         quote: { customerName, setCustomerName, lineItems, overallMargin, setOverallMargin, showGst, totals, livePrice, liveWarning, liveNote },
@@ -26,6 +28,7 @@ export function CreateQuoteV2() {
             fullness, setFullness
         },
         actions: { toggleExtra, addQuoteItem, removeQuoteItem, updateQuoteItem },
+        editing: { editingItemId, startEditItem, cancelEdit },
         loading,
         error
     } = useQuoteBuilder();
@@ -34,6 +37,9 @@ export function CreateQuoteV2() {
 
     // Draft-first flow: quote is created upfront via the modal
     const [draftQuoteId, setDraftQuoteId] = useState<string | null>(null);
+
+    // Track IDs of items that already exist in the DB (when adding to existing quote)
+    const [existingItemIds, setExistingItemIds] = useState<Set<string>>(new Set());
 
     // Product range filtering
     const [selectedRanges, setSelectedRanges] = useState<string[]>([]);
@@ -50,6 +56,51 @@ export function CreateQuoteV2() {
         document.addEventListener('mousedown', handler);
         return () => document.removeEventListener('mousedown', handler);
     }, []);
+
+    // Load existing quote data when adding items to an existing quote
+    useEffect(() => {
+        if (!existingQuoteId || loading) return;
+
+        const loadExistingQuote = async () => {
+            // Load the quote
+            const { data: quoteData } = await supabase
+                .from('quotes')
+                .select('*')
+                .eq('id', existingQuoteId)
+                .single();
+
+            if (!quoteData) return;
+
+            setDraftQuoteId(existingQuoteId);
+            setCustomerName(quoteData.customer_name || '');
+            setOverallMargin(quoteData.overall_margin_percent || 0);
+
+            // Load existing items and convert to EnhancedQuoteItem format for the summary rail
+            const { data: itemsData } = await supabase
+                .from('quote_items')
+                .select('*, products(id, name, supplier, category, quote_config)')
+                .eq('quote_id', existingQuoteId);
+
+            if (itemsData && itemsData.length > 0) {
+                const existingIds = new Set(itemsData.map((i: any) => i.id));
+                setExistingItemIds(existingIds);
+
+                // Determine which product ranges are used
+                const usedTabs = new Set<string>();
+                itemsData.forEach((item: any) => {
+                    if (item.products) {
+                        const tabId = `${item.products.supplier}|${item.products.category}`;
+                        usedTabs.add(tabId);
+                    }
+                });
+                const rangesArr = Array.from(usedTabs);
+                setSelectedRanges(rangesArr);
+                if (rangesArr.length > 0) setActiveTab(rangesArr[0]);
+            }
+        };
+
+        loadExistingQuote();
+    }, [existingQuoteId, loading]);
 
     // Compute visible tabs based on selected ranges
     const visibleTabs = useMemo(() => {
@@ -115,9 +166,10 @@ export function CreateQuoteV2() {
                 throw new Error(updateError.message);
             }
 
-            // Insert line items
-            if (lineItems.length > 0) {
-                const items = lineItems.map(item => ({
+            // Insert only NEW line items (skip any that already exist in DB)
+            const newItems = lineItems.filter(item => !existingItemIds.has(item.id));
+            if (newItems.length > 0) {
+                const items = newItems.map(item => ({
                     quote_id: draftQuoteId,
                     product_id: item.product_id,
                     width: item.width,
@@ -182,8 +234,8 @@ export function CreateQuoteV2() {
 
     return (
         <>
-            {/* Start Quote Modal — shown until draft is created */}
-            {!draftQuoteId && (
+            {/* Start Quote Modal — shown until draft is created (skip when adding to existing quote) */}
+            {!draftQuoteId && !existingQuoteId && (
                 <StartQuoteModal
                     onStart={handleDraftCreated}
                     onCancel={() => navigate('/quotes')}
@@ -196,15 +248,17 @@ export function CreateQuoteV2() {
                     {/* Header */}
                     <div className="flex items-center justify-between p-4 border-b border-white/5 bg-[#1c1c24]">
                         <div className="flex items-center gap-4">
-                            <button onClick={() => navigate('/quotes')} className="p-2 rounded-lg hover:bg-white/10 text-slate-400 hover:text-white transition-colors">
+                            <button onClick={() => existingQuoteId ? navigate(`/quotes/${existingQuoteId}`) : navigate('/quotes')} className="p-2 rounded-lg hover:bg-white/10 text-slate-400 hover:text-white transition-colors">
                                 <ArrowLeft size={20} />
                             </button>
                             <div>
                                 <h2 className="text-lg font-bold text-white">
-                                    {customerName ? `Quote — ${customerName}` : 'New Quote'}
+                                    {existingQuoteId
+                                        ? `Adding to — ${customerName || 'Quote'}`
+                                        : customerName ? `Quote — ${customerName}` : 'New Quote'}
                                 </h2>
                                 {draftQuoteId && (
-                                    <p className="text-xs text-slate-500">Draft auto-saved</p>
+                                    <p className="text-xs text-slate-500">{existingQuoteId ? 'Add items then save' : 'Draft auto-saved'}</p>
                                 )}
                             </div>
                         </div>
@@ -303,6 +357,8 @@ export function CreateQuoteV2() {
                         livePrice={livePrice}
                         liveWarning={liveWarning}
                         liveNote={liveNote}
+                        isEditing={!!editingItemId}
+                        onCancelEdit={cancelEdit}
                     />
                 </div>
 
@@ -315,7 +371,8 @@ export function CreateQuoteV2() {
                             overallMargin={overallMargin}
                             onUpdateMargin={setOverallMargin}
                             onRemoveItem={removeQuoteItem}
-                            onEditItem={(item) => { /* TODO: Implement Edit Item */ }}
+                            onEditItem={startEditItem}
+                            editingItemId={editingItemId}
                         />
 
                         {/* Primary Save Action */}

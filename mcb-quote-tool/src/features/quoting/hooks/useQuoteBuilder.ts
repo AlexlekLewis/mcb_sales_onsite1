@@ -17,7 +17,7 @@ export function useQuoteBuilder() {
     // --- Quote State ---
     const [customerName, setCustomerName] = useState('');
     const [lineItems, setQuoteItems] = useState<EnhancedQuoteItem[]>([]);
-    const [overallMargin, setOverallMargin] = useState(45);
+    const [overallMargin, setOverallMargin] = useState(0);
     const [showGst, setShowGst] = useState(true);
 
     // --- Form Configuration State ---
@@ -30,8 +30,9 @@ export function useQuoteBuilder() {
     const [selectedExtras, setSelectedExtras] = useState<SelectedExtra[]>([]);
     const [fullness, setFullness] = useState<'100' | '160'>('100');
 
-    // UI State
+    // UI / Edit State
     const [activeTab, setActiveTab] = useState<string>('');
+    const [editingItemId, setEditingItemId] = useState<string | null>(null);
 
     // --- Data Fetching ---
     useEffect(() => {
@@ -250,10 +251,59 @@ export function useQuoteBuilder() {
                 name: extra.name,
                 price: extra.price,
                 calculated_price: calcPrice,
-                price_type: extra.price_type
+                price_type: extra.price_type,
+                extra_category: extra.extra_category
             }]);
         }
     };
+
+    // --- Start editing an existing quote item ---
+    const startEditItem = useCallback((item: EnhancedQuoteItem) => {
+        // 1. Set editing state
+        setEditingItemId(item.id);
+
+        // 2. Switch to the correct tab
+        const tab = `${products.find(p => p.id === item.product_id)?.supplier}|${item.product_category}`;
+        setActiveTab(tab);
+
+        // 3. Set product
+        setSelectedProductId(item.product_id);
+
+        // 4. Restore dimensions & quantity
+        setWidth(item.width > 0 ? String(item.width) : '');
+        setDrop(item.drop > 0 ? String(item.drop) : '');
+        setQuantity(String(item.quantity));
+
+        // 5. Restore fabric by reverse-looking up the display name
+        if (item.fabric_name) {
+            const matchedFabric = fabrics.find(f => `${f.brand} ${f.name}` === item.fabric_name);
+            if (matchedFabric) setSelectedFabricId(matchedFabric.id);
+        } else {
+            setSelectedFabricId('');
+        }
+
+        // 6. Restore price group by matching group_name
+        if (item.price_group) {
+            const matchedGroup = priceGroups.find(g => g.group_name === item.price_group);
+            setSelectedPriceGroup(matchedGroup || null);
+        } else {
+            setSelectedPriceGroup(null);
+        }
+
+        // 7. Restore extras
+        setSelectedExtras(item.extras ? [...item.extras] : []);
+    }, [products, fabrics, priceGroups]);
+
+    // --- Cancel editing ---
+    const cancelEdit = useCallback(() => {
+        setEditingItemId(null);
+        setWidth('');
+        setDrop('');
+        setQuantity('1');
+        setSelectedExtras([]);
+        setSelectedFabricId('');
+        setSelectedPriceGroup(null);
+    }, []);
 
     const addQuoteItem = () => {
         if (!selectedProduct) return;
@@ -302,7 +352,7 @@ export function useQuoteBuilder() {
         const totalSellPrice = sellPrice * qty;
 
         const newItem: EnhancedQuoteItem = {
-            id: crypto.randomUUID(),
+            id: editingItemId || crypto.randomUUID(),
             product_id: selectedProduct.id,
             product_name: selectedProduct.supplier === selectedProduct.name || selectedProduct.name.startsWith(selectedProduct.supplier)
                 ? selectedProduct.name
@@ -317,7 +367,7 @@ export function useQuoteBuilder() {
             extras: selectedExtras.length > 0 ? [...selectedExtras] : undefined,
             location: '',
             cost_price: costPerUnit,
-            margin_percent: overallMargin, // Initially set to overall margin
+            margin_percent: overallMargin,
             sell_price: sellPrice,
             discount_percent: 0,
             fabric_name: fabric ? `${fabric.brand} ${fabric.name}` : '',
@@ -325,8 +375,16 @@ export function useQuoteBuilder() {
             notes: '',
         };
 
-        setQuoteItems(prev => [...prev, newItem]);
-        toast.success(`Added ${newItem.product_name} to quote`);
+        if (editingItemId) {
+            // Replace the existing item in-place
+            setQuoteItems(prev => prev.map(item => item.id === editingItemId ? newItem : item));
+            toast.success(`Updated ${newItem.product_name}`);
+            setEditingItemId(null);
+        } else {
+            // Append new item
+            setQuoteItems(prev => [...prev, newItem]);
+            toast.success(`Added ${newItem.product_name} to quote`);
+        }
 
         // Reset Form - Keep Product/Fabric selections for rapid entry
         setWidth('');
@@ -436,6 +494,13 @@ export function useQuoteBuilder() {
             selectedPriceGroup, setSelectedPriceGroup,
             selectedExtras, setSelectedExtras,
             fullness, setFullness,
+        },
+
+        // Edit State
+        editing: {
+            editingItemId,
+            startEditItem,
+            cancelEdit,
         },
 
         // Actions

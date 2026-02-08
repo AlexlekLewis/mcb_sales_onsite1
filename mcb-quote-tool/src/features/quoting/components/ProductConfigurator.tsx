@@ -1,5 +1,5 @@
 import React from 'react';
-import { Check, ChevronDown, Wrench, Info, Search, X } from 'lucide-react';
+import { Check, ChevronDown, Wrench, Info, Search, X, RefreshCw } from 'lucide-react';
 import { Product, PriceGroup, Fabric, SelectedExtra, ProductExtra } from '../types';
 import { cn } from '../../../lib/utils';
 import { FabricSelector } from './FabricSelector';
@@ -42,6 +42,8 @@ interface ProductConfiguratorProps {
     liveWarning?: string;  // Actual errors that block adding
     liveNote?: string;     // Informational (pricing tier used)
     addRangeButton?: React.ReactNode; // "+" tab for adding product ranges
+    isEditing?: boolean;
+    onCancelEdit?: () => void;
 }
 
 export function ProductConfigurator({
@@ -52,7 +54,8 @@ export function ProductConfigurator({
     extras, promotedExtras = [], accordionExtras, selectedExtras, onToggleExtra,
     formState, onFormChange,
     onAdd, isValid, livePrice, liveWarning, liveNote,
-    addRangeButton
+    addRangeButton,
+    isEditing, onCancelEdit
 }: ProductConfiguratorProps) {
 
     const selectedProduct = products.find(p => p.id === selectedProductId);
@@ -369,6 +372,22 @@ export function ProductConfigurator({
                             )}
 
                             <div className="pt-4 pb-8 space-y-4">
+                                {/* Edit Mode Banner */}
+                                {isEditing && (
+                                    <div className="flex items-center justify-between p-3 rounded-xl bg-brand-orange/10 border border-brand-orange/30">
+                                        <div className="flex items-center gap-2">
+                                            <RefreshCw size={14} className="text-brand-orange" />
+                                            <span className="text-sm font-medium text-brand-orange">Editing item — modify and update</span>
+                                        </div>
+                                        <button
+                                            onClick={onCancelEdit}
+                                            className="text-xs text-slate-400 hover:text-white px-2 py-1 rounded hover:bg-white/10 transition-colors"
+                                        >
+                                            Cancel
+                                        </button>
+                                    </div>
+                                )}
+
                                 {/* Live Price Feedback */}
                                 {(livePrice !== undefined || liveWarning || liveNote) && (
                                     <div className={cn(
@@ -397,12 +416,17 @@ export function ProductConfigurator({
                                     className={cn(
                                         "w-full py-4 rounded-xl font-bold text-lg shadow-lg transition-all transform active:scale-[0.99] flex items-center justify-center gap-2",
                                         isValid && !liveWarning
-                                            ? "bg-gradient-to-r from-brand-orange to-brand-orange-light text-white shadow-orange-glow hover:shadow-[0_0_20px_rgba(217,119,6,0.4)]"
+                                            ? isEditing
+                                                ? "bg-gradient-to-r from-emerald-500 to-emerald-400 text-white shadow-lg shadow-emerald-500/20 hover:shadow-[0_0_20px_rgba(16,185,129,0.4)]"
+                                                : "bg-gradient-to-r from-brand-orange to-brand-orange-light text-white shadow-orange-glow hover:shadow-[0_0_20px_rgba(217,119,6,0.4)]"
                                             : "bg-background-card border border-white/5 text-slate-500 cursor-not-allowed"
                                     )}
                                 >
-                                    <Check size={20} />
-                                    Add Item to Quote
+                                    {isEditing ? (
+                                        <><RefreshCw size={20} /> Update Item</>
+                                    ) : (
+                                        <><Check size={20} /> Add Item to Quote</>
+                                    )}
                                 </button>
                             </div>
                         </div>

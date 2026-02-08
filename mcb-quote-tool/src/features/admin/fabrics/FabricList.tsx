@@ -5,15 +5,30 @@ import { DataTable } from '../../../components/ui/DataTable';
 import { Fabric } from '../../quoting/types';
 import { Plus, Filter } from 'lucide-react';
 import { CategoryNav } from '../components/CategoryNav';
+import { Button } from '../../../components/ui/Button';
 
 export function FabricList() {
     const navigate = useNavigate();
-    const [searchParams] = useSearchParams();
+    const [searchParams, setSearchParams] = useSearchParams();
     const categoryParam = searchParams.get('category');
+    const supplierParam = searchParams.get('supplier');
 
     const [fabrics, setFabrics] = useState<Fabric[]>([]);
     const [loading, setLoading] = useState(true);
     const [filter, setFilter] = useState('');
+    const [activeSupplier, setActiveSupplier] = useState<string>(supplierParam || 'All');
+
+    // Sync supplier tab with URL param
+    const handleSupplierChange = (supplier: string) => {
+        setActiveSupplier(supplier);
+        const newParams = new URLSearchParams(searchParams);
+        if (supplier === 'All') {
+            newParams.delete('supplier');
+        } else {
+            newParams.set('supplier', supplier);
+        }
+        setSearchParams(newParams, { replace: true });
+    };
 
     useEffect(() => {
         fetchFabrics();
@@ -42,7 +57,11 @@ export function FabricList() {
             ? f.product_category === categoryParam
             : true;
 
-        return matchesSearch && matchesCategory;
+        const matchesSupplier = activeSupplier === 'All'
+            ? true
+            : f.supplier === activeSupplier;
+
+        return matchesSearch && matchesCategory && matchesSupplier;
     });
 
     const columns = [
@@ -97,6 +116,38 @@ export function FabricList() {
                     className="bg-transparent border-none focus:outline-none text-white w-full placeholder-slate-500"
                 />
             </div>
+
+            {/* Supplier Tabs */}
+            {categoryParam && (
+                <div className="flex gap-2 mb-4 overflow-x-auto pb-2 scrollbar-none">
+                    {(() => {
+                        const suppliers = Array.from(new Set(fabrics.filter(f => !categoryParam || f.product_category === categoryParam).map(f => f.supplier))).sort();
+                        if (suppliers.length <= 1) return null;
+
+                        return (
+                            <div className="flex gap-2">
+                                <Button
+                                    size="sm"
+                                    variant={activeSupplier === 'All' ? 'primary' : 'secondary'}
+                                    onClick={() => handleSupplierChange('All')}
+                                >
+                                    All
+                                </Button>
+                                {suppliers.map(s => (
+                                    <Button
+                                        key={s}
+                                        size="sm"
+                                        variant={activeSupplier === s ? 'primary' : 'secondary'}
+                                        onClick={() => handleSupplierChange(s)}
+                                    >
+                                        {s}
+                                    </Button>
+                                ))}
+                            </div>
+                        );
+                    })()}
+                </div>
+            )}
 
             <DataTable
                 data={filteredFabrics}

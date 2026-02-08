@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Trash2, Edit2, AlertCircle, ChevronDown, ChevronRight, Calculator } from 'lucide-react';
+import { cn } from '../../../lib/utils';
 import { EnhancedQuoteItem } from '../types';
 
 interface QuoteSummaryRailProps {
@@ -12,10 +13,11 @@ interface QuoteSummaryRailProps {
     overallMargin: number;
     onUpdateMargin: (percent: number) => void;
     onRemoveItem: (id: string) => void;
-    onEditItem: (item: EnhancedQuoteItem) => void; // Placeholder for future modal logic
+    onEditItem: (item: EnhancedQuoteItem) => void;
+    editingItemId?: string | null;
 }
 
-export function QuoteSummaryRail({ items, totals, overallMargin, onUpdateMargin, onRemoveItem, onEditItem }: QuoteSummaryRailProps) {
+export function QuoteSummaryRail({ items, totals, overallMargin, onUpdateMargin, onRemoveItem, onEditItem, editingItemId }: QuoteSummaryRailProps) {
     const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
 
     const toggleExpand = (id: string) => {
@@ -77,10 +79,25 @@ export function QuoteSummaryRail({ items, totals, overallMargin, onUpdateMargin,
                 ) : (
                     items.map((item) => {
                         const isExpanded = expandedIds.has(item.id);
+                        const isEditing = editingItemId === item.id;
                         return (
-                            <div key={item.id} className="group bg-background-input border border-white/5 rounded-xl transition-all hover:border-brand-orange/30 overflow-hidden">
-                                {/* Item Header Row */}
-                                <div className="p-3 flex items-start gap-3 cursor-pointer hover:bg-white/5 transition-colors" onClick={() => toggleExpand(item.id)}>
+                            <div
+                                key={item.id}
+                                className={cn(
+                                    "group bg-background-input border rounded-xl transition-all overflow-hidden",
+                                    isEditing
+                                        ? "border-brand-orange ring-1 ring-brand-orange/30 shadow-lg shadow-brand-orange/10"
+                                        : "border-white/5 hover:border-brand-orange/30"
+                                )}
+                            >
+                                {/* Item Header Row — click to edit (or toggle expand if already editing) */}
+                                <div
+                                    className="p-3 flex items-start gap-3 cursor-pointer hover:bg-white/5 transition-colors"
+                                    onClick={() => {
+                                        if (!isEditing) onEditItem(item);
+                                        else toggleExpand(item.id);
+                                    }}
+                                >
                                     <div className="mt-1 text-slate-400">
                                         {isExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
                                     </div>
@@ -93,6 +110,9 @@ export function QuoteSummaryRail({ items, totals, overallMargin, onUpdateMargin,
                                             <p className="text-xs text-slate-400 truncate">
                                                 {item.width}x{item.drop}mm • Qty {item.quantity}
                                             </p>
+                                            {isEditing && (
+                                                <span className="text-[10px] text-brand-orange font-medium uppercase tracking-wider">Editing</span>
+                                            )}
                                         </div>
                                     </div>
                                 </div>
@@ -127,13 +147,24 @@ export function QuoteSummaryRail({ items, totals, overallMargin, onUpdateMargin,
 
                                             <div className="flex justify-end gap-2 mt-3 pt-2 border-t border-white/5">
                                                 <button
+                                                    onClick={(e) => { e.stopPropagation(); onEditItem(item); }}
+                                                    className={cn(
+                                                        "flex items-center gap-1.5 px-2 py-1 rounded transition-colors text-xs",
+                                                        isEditing
+                                                            ? "text-brand-orange bg-brand-orange/10"
+                                                            : "text-slate-400 hover:text-white hover:bg-white/10"
+                                                    )}
+                                                    title="Edit Item"
+                                                >
+                                                    <Edit2 size={12} /> {isEditing ? 'Editing...' : 'Edit'}
+                                                </button>
+                                                <button
                                                     onClick={(e) => { e.stopPropagation(); onRemoveItem(item.id); }}
                                                     className="flex items-center gap-1.5 px-2 py-1 text-red-400 hover:text-white hover:bg-red-500/20 rounded transition-colors text-xs"
                                                     title="Remove Item"
                                                 >
                                                     <Trash2 size={12} /> Remove
                                                 </button>
-                                                {/* Edit support to come later */}
                                             </div>
                                         </div>
                                     </div>

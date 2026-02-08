@@ -195,6 +195,7 @@ export function FabricForm() {
                             <option value="Curtains">Curtains</option>
                             <option value="Plantation Shutters">Plantation Shutters</option>
                             <option value="External Blinds">External Blinds</option>
+                            <option value="Roller Shutters">Roller Shutters</option>
                             <option value="Security Doors">Security Doors</option>
                         </select>
                     </div>

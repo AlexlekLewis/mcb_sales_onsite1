@@ -38,6 +38,7 @@ const PRODUCT_CATEGORIES = [
     'Internal Blinds',
     'Curtains',
     'Plantation Shutters',
+    'Roller Shutters',
     'Security Doors',
 ];
 

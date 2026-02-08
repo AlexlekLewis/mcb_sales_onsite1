@@ -92,6 +92,7 @@ export interface SelectedExtra {
     price: number;
     calculated_price: number;
     price_type?: string;
+    extra_category?: string; // e.g. 'Installation', 'Motorisation', 'General'
 }
 
 export interface PriceGroup {

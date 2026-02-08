@@ -2,6 +2,7 @@ export const PRODUCT_CATEGORIES = {
     INTERNAL_BLINDS: 'Internal Blinds',
     CURTAINS: 'Curtains',
     PLANTATION_SHUTTERS: 'Plantation Shutters',
+    ROLLER_SHUTTERS: 'Roller Shutters',
     EXTERNAL_BLINDS: 'External Blinds',
     SECURITY_DOORS: 'Security Doors',
     HONEYCOMB: 'Honeycomb',

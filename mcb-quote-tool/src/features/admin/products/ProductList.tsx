@@ -13,8 +13,9 @@ import { Input } from '../../../components/ui/Input';
 
 export function ProductList() {
     const navigate = useNavigate();
-    const [searchParams] = useSearchParams();
+    const [searchParams, setSearchParams] = useSearchParams();
     const categoryParam = searchParams.get('category');
+    const supplierParam = searchParams.get('supplier');
 
     // ... existing state ...
     const [products, setProducts] = useState<Product[]>([]);
@@ -22,7 +23,19 @@ export function ProductList() {
     const [filter, setFilter] = useState('');
     const [explainingProduct, setExplainingProduct] = useState<Product | null>(null);
     const [showConfig, setShowConfig] = useState(false);
-    const [activeSupplier, setActiveSupplier] = useState<string>('All');
+    const [activeSupplier, setActiveSupplier] = useState<string>(supplierParam || 'All');
+
+    // Sync supplier tab with URL param
+    const handleSupplierChange = (supplier: string) => {
+        setActiveSupplier(supplier);
+        const newParams = new URLSearchParams(searchParams);
+        if (supplier === 'All') {
+            newParams.delete('supplier');
+        } else {
+            newParams.set('supplier', supplier);
+        }
+        setSearchParams(newParams, { replace: true });
+    };
 
     useEffect(() => {
         fetchProducts();
@@ -122,7 +135,7 @@ export function ProductList() {
                                 <Button
                                     size="sm"
                                     variant={activeSupplier === 'All' ? 'primary' : 'secondary'}
-                                    onClick={() => setActiveSupplier('All')}
+                                    onClick={() => handleSupplierChange('All')}
                                 >
                                     All
                                 </Button>
@@ -131,7 +144,7 @@ export function ProductList() {
                                         key={s}
                                         size="sm"
                                         variant={activeSupplier === s ? 'primary' : 'secondary'}
-                                        onClick={() => setActiveSupplier(s)}
+                                        onClick={() => handleSupplierChange(s)}
                                     >
                                         {s}
                                     </Button>

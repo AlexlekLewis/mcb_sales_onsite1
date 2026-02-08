@@ -78,8 +78,8 @@ const calculateExternalBlindPrice = (data: GridPricingData, w: number, d: number
     const { grids, width_steps, drop_steps } = data;
     if (!grids || !width_steps || !drop_steps) return { price: 0, warning: 'Invalid pricing data' };
 
-    // Key Determination (Default to '1' if no group)
-    const key = priceGroup?.group_code || '1';
+    // Key Determination: use group_code, fallback to first available grid key
+    const key = priceGroup?.group_code || Object.keys(grids)[0] || '1';
 
     const activeGrid = grids[key];
     if (!activeGrid) return { price: 0, warning: `Price grid not found for Group ${key}` };
@@ -106,9 +106,8 @@ const calculateStandardGridPrice = (data: GridPricingData, w: number, d: number,
     const { grids, grid, width_steps, drop_steps } = data;
     if ((!grids && !grid) || !width_steps || !drop_steps) return { price: 0, warning: 'Invalid pricing data' };
 
-    // Key Determination
-    // Use priceGroup.group_code directly.
-    let key = priceGroup?.group_code || '1';
+    // Key Determination: use group_code, fallback to first available grid key
+    let key = priceGroup?.group_code || (grids ? Object.keys(grids)[0] : null) || '1';
     let activeGrid: number[][] | undefined;
 
     if (grids) {
@@ -125,14 +124,19 @@ const calculateStandardGridPrice = (data: GridPricingData, w: number, d: number,
 
     if (!activeGrid) return { price: 0, warning: `Price grid not found for Group ${key}` };
 
-    // Indexing: Roller Blinds are WIDTH Major [WidthIndex][DropIndex] (Fixed Rule)
     const widthIndex = width_steps.findIndex((step: number) => w <= step);
     const dropIndex = drop_steps.findIndex((step: number) => d <= step);
 
     if (widthIndex === -1) return { price: 0, warning: `Width ${w}mm exceeds max ${width_steps[width_steps.length - 1]}mm` };
     if (dropIndex === -1) return { price: 0, warning: `Drop ${d}mm exceeds max ${drop_steps[drop_steps.length - 1]}mm` };
 
-    const price = activeGrid[widthIndex]?.[dropIndex] || 0;
+    // Auto-detect grid orientation by comparing dimensions:
+    // If rows match drop_steps count and cols match width_steps count → Drop-Major [Drop][Width]
+    // Otherwise assume Width-Major [Width][Drop]
+    const isDropMajor = activeGrid.length === drop_steps.length && activeGrid[0]?.length === width_steps.length;
+    const price = isDropMajor
+        ? (activeGrid[dropIndex]?.[widthIndex] || 0)
+        : (activeGrid[widthIndex]?.[dropIndex] || 0);
 
     // Apply Multiplier (e.g. for Retail Markup if configured in PriceGroup)
     const finalPrice = price * (priceGroup?.multiplier || 1.0);

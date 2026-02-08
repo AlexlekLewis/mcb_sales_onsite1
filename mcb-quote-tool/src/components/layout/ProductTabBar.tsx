@@ -21,6 +21,7 @@ const PRODUCT_CATEGORIES = [
     { id: 'external-blinds', label: 'External Blinds', icon: '☀️' },
     { id: 'internal-blinds', label: 'Internal Blinds', icon: '🪟' },
     { id: 'plantation-shutters', label: 'Plantation Shutters', icon: '🏠' },
+    { id: 'roller-shutters', label: 'Roller Shutters', icon: '🛡️' },
     { id: 'security-doors', label: 'Security Doors', icon: '🔒' },
 ];
 

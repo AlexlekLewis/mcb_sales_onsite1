@@ -14,7 +14,8 @@ import {
     CheckCircle,
     XCircle,
     Edit3,
-    Eye
+    Eye,
+    Plus
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { Quote, QuoteItemFull } from './types';
@@ -278,6 +279,15 @@ export function QuoteDetails() {
                     {editMode ? 'View Mode' : 'Edit Quote'}
                 </button>
 
+                {/* Add Items — navigate to the builder with existing quote context */}
+                <button
+                    onClick={() => navigate(`/quotes/new?quoteId=${quote.id}`)}
+                    className="px-4 py-2 bg-green-600 hover:bg-green-500 text-white text-sm font-medium rounded-xl transition-all flex items-center gap-2"
+                >
+                    <Plus size={16} />
+                    Add Items
+                </button>
+
                 {quote.status === 'draft' && (
                     <button
                         onClick={() => updateStatus('sent')}
@@ -360,6 +370,9 @@ export function QuoteDetails() {
                                         <th className="p-4 font-medium">Width</th>
                                         <th className="p-4 font-medium">Drop</th>
                                         <th className="p-4 font-medium">Price Group</th>
+                                        <th className="p-4 font-medium text-right">Product $</th>
+                                        <th className="p-4 font-medium text-right">Extras $</th>
+                                        <th className="p-4 font-medium text-right">Install $</th>
                                         <th className="p-4 font-medium">Gross Margin</th>
                                         <th className="p-4 font-medium">Discount %</th>
                                         <th className="p-4 font-medium">Discount $</th>
@@ -376,7 +389,7 @@ export function QuoteDetails() {
                                 <tbody className="divide-y divide-white/5 text-sm">
                                     {items.length === 0 ? (
                                         <tr>
-                                            <td colSpan={15} className="px-6 py-8 text-center text-slate-400">No items in this quote</td>
+                                            <td colSpan={18} className="px-6 py-8 text-center text-slate-400">No items in this quote</td>
                                         </tr>
                                     ) : (
                                         items.map((item, index) => {
@@ -388,6 +401,16 @@ export function QuoteDetails() {
                                             const discountPercent = itemAny.discount_percent || 0;
                                             const discountAmount = item.calculated_price * (discountPercent / 100);
 
+                                            // Separate extras into components vs installation
+                                            const allExtras = itemAny.item_config?.extras || [];
+                                            const isInstallExtra = (e: any) =>
+                                                e.extra_category?.toLowerCase() === 'installation' ||
+                                                (!e.extra_category && e.name?.toLowerCase().includes('install'));
+                                            const installTotal = allExtras.filter(isInstallExtra).reduce((sum: number, e: any) => sum + (e.calculated_price || 0), 0);
+                                            const componentTotal = allExtras.filter((e: any) => !isInstallExtra(e)).reduce((sum: number, e: any) => sum + (e.calculated_price || 0), 0);
+                                            const extrasTotal = installTotal + componentTotal;
+                                            const productPrice = (item.cost_price || 0) - extrasTotal;
+
                                             return (
                                                 <tr key={item.id} className="hover:bg-white/5 transition-colors group">
                                                     <td className="p-4 text-white font-medium">
@@ -398,6 +421,23 @@ export function QuoteDetails() {
                                                     <td className="p-4 text-slate-300">{item.drop}</td>
                                                     <td className="p-4 text-slate-300">
                                                         {itemAny.item_config?.price_group || 'Group 1'}
+                                                    </td>
+                                                    <td className="p-4 text-slate-300 text-right">
+                                                        ${productPrice.toFixed(2)}
+                                                    </td>
+                                                    <td className="p-4 text-right">
+                                                        {componentTotal > 0 ? (
+                                                            <span className="text-blue-400">${componentTotal.toFixed(2)}</span>
+                                                        ) : (
+                                                            <span className="text-slate-500">—</span>
+                                                        )}
+                                                    </td>
+                                                    <td className="p-4 text-right">
+                                                        {installTotal > 0 ? (
+                                                            <span className="text-brand-orange">${installTotal.toFixed(2)}</span>
+                                                        ) : (
+                                                            <span className="text-slate-500">—</span>
+                                                        )}
                                                     </td>
                                                     <td className="p-4 text-slate-300">
                                                         {margin}%
